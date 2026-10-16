@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — links up to 2047 bytes
+
+- A captured link may be up to 2047 bytes (was 543, Orbit Store's limit): FileKeeper hands its file
+  out through Datanodes' `tunnel<n>.dlproxy.uk` gateway as `/download/<598-character token>?sig=...`,
+  about 675 bytes, which the scan cut short and so never returned. `rejected` links follow.
+
 ## Unreleased — a vault's Vikingfile page, and a PKG's own title id
 
 - Page mode: `prefix: 'https://vikingfile.com/f/'` with the suffix `/` returns the Vikingfile file

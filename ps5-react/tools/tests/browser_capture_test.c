@@ -179,6 +179,24 @@ int main(void) {
   memset(match.url, 0, sizeof match.url);
   assert(browser_match(&match, (const unsigned char *)bound, strlen(bound)));
   match.stale = NULL; match.stale_count = 0;
+  // FileKeeper's file: Datanodes' gateway with a 598-character token, about 675 bytes in all, read
+  // whole across a chunk boundary in ASCII and UTF-16.
+  {
+    char filekeeper[700] = "https://tunnel1.dlproxy.uk/download/";
+    size_t used = strlen(filekeeper);
+    for (size_t i = 0; i < 598; i++) filekeeper[used++] = "AbC-x_9z"[i % 8];
+    strcpy(filekeeper + used, "?sig=9s2rC9fkx18QxKAvYIcWCtG2gqVGEaYHTQGm");
+    assert(strlen(filekeeper) > 600 && browser_capture_anchor_url("PPSA28061", filekeeper) == BROWSER_CAPTURE_UNBOUND);
+    BrowserMatch longest = {.prefix = "https://", .filename = "PPSA28061", .anchor = true};
+    for (size_t step = 1; step <= 2; step++) {
+      memset(memory.bytes, 0, memory.length);
+      memset(longest.url, 0, sizeof longest.url);
+      const size_t offset = PROBE_CHUNK - 300;
+      for (size_t i = 0; i < strlen(filekeeper); i++) memory.bytes[offset + i * step] = (unsigned char)filekeeper[i];
+      assert(scan(&memory, &longest, memory.length) == PROBE_FOUND);
+      assert(!strcmp(longest.url, filekeeper));
+    }
+  }
   // Page mode: the Vikingfile file page a LinkVault vault opens, and nothing else.
   assert(browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki"));
   assert(browser_capture_page_url("https://vik1ngfile.site/f/jjeEUkyPki"));

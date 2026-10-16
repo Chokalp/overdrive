@@ -634,7 +634,7 @@ only the app's own probe decides whether a captured URL really is the file.
 Either way the suffix is at most 160 UTF-8 bytes without controls, slashes,
 backslashes or `..`, and the deadline is an integer from 1 to 300 seconds.
 `rejected` lists up to six links the app already probed and refused (each an
-`https://` URL of at most 543 printable bytes); the scan passes over them, so a
+`https://` URL of at most 2047 printable bytes); the scan passes over them, so a
 page that keeps a wrong link in memory does not stop the next capture on it.
 The browser's network process keeps the addresses of files it fetched earlier
 in memory it never clears, so a capture first fingerprints every link already

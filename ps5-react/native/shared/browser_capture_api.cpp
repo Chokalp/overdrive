@@ -30,7 +30,7 @@ bool links(JSContext* ctx, JSValueConst value, std::vector<std::string>& out) {
     const char* input = JS_IsString(item) ? JS_ToCStringLen(ctx, &length, item) : nullptr;
     JS_FreeValue(ctx, item);
     if (!input) return false;
-    bool valid = length >= 9 && length <= 543 && !std::strncmp(input, "https://", 8);
+    bool valid = length >= 9 && length <= 2047 && !std::strncmp(input, "https://", 8);
     for (size_t j = 0; valid && j < length; j++)
       valid = static_cast<unsigned char>(input[j]) > 32 && static_cast<unsigned char>(input[j]) < 127;
     if (valid) out.emplace_back(input, length);
@@ -58,7 +58,7 @@ JSValue capture(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv) {
     return JS_ThrowTypeError(ctx, "browser.capture: filename contains a control character");
   std::vector<std::string> rejected;
   if (argc > 3 && !JS_IsUndefined(argv[3]) && !links(ctx, argv[3], rejected))
-    return JS_ThrowTypeError(ctx, "browser.capture: rejected links must be an array of at most 6 https:// URLs of 9..543 printable bytes");
+    return JS_ThrowTypeError(ctx, "browser.capture: rejected links must be an array of at most 6 https:// URLs of 9..2047 printable bytes");
   const bool resume = argc > 4 && JS_ToBool(ctx, argv[4]) > 0;
   std::string error;
   const auto id = browser_capture::capture(std::move(prefix), std::move(suffix), static_cast<int>(timeout),

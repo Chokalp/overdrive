@@ -53,7 +53,7 @@ void run(std::shared_ptr<Job> job) {
       if (count <= 0) { error = "The capture payload stopped answering. Retry or enter the final file link."; break; }
       for (int i = 0; i < count && !ended; i++) {
         if (buffer[i] != '\n') {
-          if (line.size() >= 600) { error = "Invalid capture response."; ended = true; }
+          if (line.size() >= 2200) { error = "Invalid capture response."; ended = true; }
           else line.push_back(buffer[i]);
           continue;
         }

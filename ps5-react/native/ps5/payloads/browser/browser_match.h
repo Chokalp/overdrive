@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "browser_scan.h"
 #define BROWSER_CAPTURE_REJECTED_MAX 6
 #define BROWSER_CAPTURE_STALE_MAX 4096
 typedef struct {
@@ -24,7 +25,7 @@ typedef struct {
   uint64_t *stale;
   size_t stale_count;
   bool stale_full;
-  char url[544];
+  char url[PROBE_MATCH_MAX];
 } BrowserMatch;
 extern const char *const browser_capture_prefixes[2];
 extern const char *const browser_capture_page_prefixes[2];

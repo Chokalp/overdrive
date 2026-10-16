@@ -42,7 +42,7 @@ static bool connected(void) {
 }
 static bool active(void *context) { return connected() && probe_target_active(context); }
 static void say(const char *kind, const char *value) {
-  char buffer[600];
+  char buffer[PROBE_MATCH_MAX + 64];
   const int length = snprintf(buffer, sizeof buffer, "%s %s\n", kind, value);
   if (length <= 0 || length >= (int)sizeof buffer) return;
   size_t sent = 0;
