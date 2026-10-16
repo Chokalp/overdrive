@@ -1184,6 +1184,10 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       try {
         const anchor = captureAnchor(job2.titleId);
         console.log("[browser-capture] source:", sourceForLog(source2, job2.browserUrl), "- watching any file link carrying", anchor);
+        // A LinkVault record's catalog size is the whole vault's, not the file's: compared with the
+        // captured file it refused the right one every time. Only a direct host's size is evidence.
+        const vaulted = webURL(job2.browserUrl).host === "link-vault.org";
+        const catalogBytes = vaulted ? null : source2.sizeBytes || null;
         // A link the probe refuses (a page, an expired route) does not end the session: the payload
         // scans on past it until the deadline, as Orbit Store 1.3.5 does, up to six refusals. The
         // restart resumes from the first pass's fingerprints, so the links that appeared since stay new.
@@ -1210,7 +1214,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           console.log("[browser-capture] link captured:", linkForLog(result.url), "- validating one-byte range");
           let found;
           try {
-            found = await validateCapturedLink(http, result.url, { anchor, sizeBytes: source2.sizeBytes || null }, session.cancel.signal);
+            found = await validateCapturedLink(http, result.url, { anchor, sizeBytes: catalogBytes }, session.cancel.signal);
           } catch (error2) {
             if (!current() || rejected.length >= 6) throw error2;
             console.log("[browser-capture] refused", linkForLog(result.url), "and scanning on:", error2.message);
