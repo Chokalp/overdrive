@@ -242,7 +242,12 @@ struct Host {
     cfg.screen_width = width; cfg.screen_height = height; cfg.screen_scale = 2;
     cfg.memory_limit = kJsMemoryLimit;
     cfg.malloc_functions = js_heap_functions();
+#ifdef __APPLE__
     cfg.max_stack_size = 1024 * 1024;
+#else
+    // x86-64 Linux builds use deeper native frames per JS call; the main thread has 8 MiB.
+    cfg.max_stack_size = 4 * 1024 * 1024;
+#endif
     cfg.install_host_globals = ps5_react_install_host_api;
     runtime_started = er_runtime_init(&cfg);
     if (!runtime_started) return false;
