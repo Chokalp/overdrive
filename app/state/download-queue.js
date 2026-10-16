@@ -1240,6 +1240,8 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         // captured file it refused the right one every time. Only a direct host's size is evidence.
         const vaulted = webURL(job2.browserUrl).host === "link-vault.org";
         const catalogBytes = vaulted ? null : source2.sizeBytes || null;
+        const akiraBox = /(?:^|\.)akirabox\.(?:com|to)$/.test(webURL(job2.browserUrl).host) || vaulted && /#AkiraBox$/.test(job2.browserUrl);
+        const akiraPart = akiraBox ? linkPageMetadata(source2).part : null;
         // A link the probe refuses (a page, an expired route) does not end the session: the payload
         // scans on past it until the deadline, as Orbit Store 1.3.5 does, up to six refusals. The
         // restart resumes from the first pass's fingerprints, so the links that appeared since stay new.
@@ -1273,6 +1275,10 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           let found;
           try {
             found = await validateCapturedLink(http, result.url, { anchor, sizeBytes: catalogBytes }, session.cancel.signal);
+            // An AkiraBox set's parts are captured one by one, and the part before is still in the
+            // browser's memory, on the same host and named for the same game: the file has to be the
+            // part this source is.
+            if (akiraPart) requirePart(akiraPart, found.filename);
           } catch (error2) {
             if (!current() || rejected.length >= 6) throw error2;
             console.log("[browser-capture] refused", linkForLog(result.url), "and scanning on:", error2.message);
