@@ -4,13 +4,23 @@
 // out of the catalog (state/catalog.js). Nothing is removed from the catalog data; false brings
 // every one of them back. Archive.org stays, its /details/ pages too.
 
-import { sourceKind } from './download-sources.js';
+import { sourceKind, webURL } from './download-sources.js';
 import { vikingLinkPage } from './viking-capture.js';
 
   var PAUSE_BROWSER_HOSTS = true;
+  // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper).
+  var TESTING = ["datanodes.to", "datanodes.co", "filekeeper.net"];
+  function testing(release) {
+    try {
+      const host = webURL(release.browserUrl || release.url).host.replace(/^www\./, "");
+      return TESTING.some((domain) => host === domain || host.endsWith(`.${domain}`));
+    } catch {
+      return false;
+    }
+  }
   // The catalog's own host keys (game.providers) whose every source needs the browser.
   var PAUSED_FILTERS = /* @__PURE__ */ new Set([
-    "1fichier", "datanodes", "filekeeper", "datavaults", "buzzheavier", "gofile", "rapidgator", "filecrypt",
+    "1fichier", "datavaults", "buzzheavier", "gofile", "rapidgator", "filecrypt",
     "ranoz", "transfer", "mega", "urlvanish", "fileditchfiles", "tinyurl", "fuckingfast", "akirabox", "rootz.so",
     "1024terabox"
   ]);
@@ -22,7 +32,7 @@ import { vikingLinkPage } from './viking-capture.js';
     } catch {
       return false;
     }
-    if (kind === "vikingfile" || vikingLinkPage(release) || /archive\.org$/i.test(release.provider || "")) return false;
+    if (kind === "vikingfile" || vikingLinkPage(release) || /archive\.org$/i.test(release.provider || "") || testing(release)) return false;
     return kind === "browser" || kind === "datanodes" || kind === "buzzheavier";
   }
   var pausedFilter = (host) => PAUSE_BROWSER_HOSTS && PAUSED_FILTERS.has(host);
