@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased — desktop preview on Linux, with a mouse
+
+- The desktop preview builds and runs on Linux: `sysinfo`, `/proc/self/mounts` and `xdg-open` stand
+  in for the Mach, BSD and Launch Services calls, FFmpeg and `rar-extract` take TLS and SHA-256 from
+  the system OpenSSL, and the JS stack guard is 4 MiB there. macOS keeps SecureTransport and
+  VideoToolbox; the PS5 build is unchanged. Build with `CC=clang CXX=clang++`: GCC rejects a
+  bounds warning in `archive_preflight.cpp`.
+- A mouse drives the preview as a developer's pointer: a left click focuses the smallest navigable
+  element under it (`__ps5ReactHit`, a fraction of the screen each way) and confirms, a right click
+  is `back`, and the wheel is `up`/`down`. `ps5_drive.py click <x> <y>` does the same in the
+  snapshot's logical pixels.
+
 ## Unreleased — one capture for every browser-only provider
 
 - Browser capture also takes the file link from the browser for the hosts whose check only the
