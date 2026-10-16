@@ -21,6 +21,31 @@
   existing `__ps5ReactInspect` and `__ps5ReactFocus` dev hooks do; stripping it would need a
   target-aware bundle step, a change to the PS5 build path this entry deliberately avoids.
   
+
+## Unreleased — links up to 2047 bytes
+
+- A captured link may be up to 2047 bytes (was 543, Orbit Store's limit): FileKeeper hands its file
+  out through Datanodes' `tunnel<n>.dlproxy.uk` gateway as `/download/<598-character token>?sig=...`,
+  about 675 bytes, which the scan cut short and so never returned. `rejected` links follow.
+
+## Unreleased — a vault's Vikingfile page, and a PKG's own title id
+
+- Page mode: `prefix: 'https://vikingfile.com/f/'` with the suffix `/` returns the Vikingfile file
+  page, `/f/<10-character id>`, that a LinkVault vault opens. The app reads that page's public
+  metadata and captures the file it names next, so a vault's Vikingfile download is bound to its
+  exact filename and size, as a direct Vikingfile source's is.
+- `Archives.inspect` also returns `title`: for a PKG, the title id its content id names (the
+  header's `UP0001-CUSA01234_00-...` at 0x40), so the app can tell another game's file early.
+
+## Unreleased — only links that appear after the capture starts
+
+- The browser's network process keeps the addresses of files it fetched earlier in memory it never
+  clears, and a capture took one of them, another game's file, the moment it started. A capture now
+  first fingerprints every link already in memory that names no game, before the app opens the page
+  (the task stays `queued` until that pass ends and logs what it found), and only a new such link is
+  taken after it. A link bound to the game, by its title id or Vikingfile's expected filename, is
+  accepted however old. `resume: true` restarts after a refused link with those fingerprints.
+
 ## Unreleased — 1fichier and Datanodes routes, and no stop on a host's own page
 
 - Anchor mode accepts the generated routes that carry no file name, adapted from Orbit Store

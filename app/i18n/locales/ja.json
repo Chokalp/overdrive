@@ -142,7 +142,6 @@
   "downloads.summary.failed": "失敗{count}件",
   "downloads.summary.inProgress": "進行中{count}件",
   "downloads.summary.paused": "一時停止{count}件",
-  "downloads.switchedSource": "{failed}が使えなかったため、Overdriveは{next}に切り替えました。",
   "downloads.timeLeft": "残り{time}",
   "downloads.title": "ダウンロード",
   "downloads.unavailable": "ダウンロードを利用できません",

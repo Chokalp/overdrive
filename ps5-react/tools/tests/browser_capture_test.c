@@ -155,6 +155,65 @@ int main(void) {
   match.rejected[1] = "https://cdn9.example.ru/b/PPSA01285.exfat"; match.rejected_count = 2;
   assert(!browser_match(&match, (const unsigned char *)two, strlen(two)));
   match.rejected_count = 0;
+  // The baseline pass only fingerprints what memory already holds; after it, those links are
+  // passed over and only a new one is taken (another game's file left from an earlier page).
+  uint64_t stale[BROWSER_CAPTURE_STALE_MAX];
+  match.stale = stale; match.stale_count = 0; match.baseline = true;
+  const char *old = "\"https://akirabox.com/download/x1/Other_Game.rar\" \"https://akirabox.com/download/x2/Third.7z\"";
+  assert(!browser_match(&match, (const unsigned char *)old, strlen(old)));
+  assert(match.stale_count == 2);
+  assert(!browser_match(&match, (const unsigned char *)old, strlen(old)));
+  assert(match.stale_count == 2);
+  match.baseline = false;
+  assert(!browser_match(&match, (const unsigned char *)old, strlen(old)));
+  const char *later = "\"https://akirabox.com/download/x1/Other_Game.rar\" \"https://akirabox.com/download/x9/PPSA01285.rar\"";
+  memset(match.url, 0, sizeof match.url);
+  assert(browser_match(&match, (const unsigned char *)later, strlen(later)));
+  assert(!strcmp(match.url, "https://akirabox.com/download/x9/PPSA01285.rar"));
+  // A link bound to the game is never fingerprinted: an old one is still this game's file.
+  const char *bound = "\"https://cdn9.example.ru/z/PPSA01285.exfat\"";
+  match.baseline = true;
+  assert(!browser_match(&match, (const unsigned char *)bound, strlen(bound)));
+  assert(match.stale_count == 2);
+  match.baseline = false;
+  memset(match.url, 0, sizeof match.url);
+  assert(browser_match(&match, (const unsigned char *)bound, strlen(bound)));
+  match.stale = NULL; match.stale_count = 0;
+  // FileKeeper's file: Datanodes' gateway with a 598-character token, about 675 bytes in all, read
+  // whole across a chunk boundary in ASCII and UTF-16.
+  {
+    char filekeeper[700] = "https://tunnel1.dlproxy.uk/download/";
+    size_t used = strlen(filekeeper);
+    for (size_t i = 0; i < 598; i++) filekeeper[used++] = "AbC-x_9z"[i % 8];
+    strcpy(filekeeper + used, "?sig=9s2rC9fkx18QxKAvYIcWCtG2gqVGEaYHTQGm");
+    assert(strlen(filekeeper) > 600 && browser_capture_anchor_url("PPSA28061", filekeeper) == BROWSER_CAPTURE_UNBOUND);
+    BrowserMatch longest = {.prefix = "https://", .filename = "PPSA28061", .anchor = true};
+    for (size_t step = 1; step <= 2; step++) {
+      memset(memory.bytes, 0, memory.length);
+      memset(longest.url, 0, sizeof longest.url);
+      const size_t offset = PROBE_CHUNK - 300;
+      for (size_t i = 0; i < strlen(filekeeper); i++) memory.bytes[offset + i * step] = (unsigned char)filekeeper[i];
+      assert(scan(&memory, &longest, memory.length) == PROBE_FOUND);
+      assert(!strcmp(longest.url, filekeeper));
+    }
+  }
+  // Page mode: the Vikingfile file page a LinkVault vault opens, and nothing else.
+  assert(browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki"));
+  assert(browser_capture_page_url("https://vik1ngfile.site/f/jjeEUkyPki"));
+  assert(!browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPk"));
+  assert(!browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki/x"));
+  assert(!browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki?ref=1"));
+  assert(!browser_capture_page_url("https://vikingfile.com/d/jjeEUkyPki/a.rar"));
+  assert(!browser_capture_page_url("https://vikingfile.com.evil.test/f/jjeEUkyPki"));
+  BrowserMatch pages = {.prefix = "https://vikingfile.com/f/", .filename = "", .page = true, .stale = stale};
+  const char *vault = "\"https://vikingfile.com/f/OldOld0000\" <a href=\"https:\\/\\/vikingfile.com\\/f\\/jjeEUkyPki\">";
+  pages.baseline = true;
+  const char *before = "\"https://vikingfile.com/f/OldOld0000\"";
+  assert(!browser_match(&pages, (const unsigned char *)before, strlen(before)));
+  assert(pages.stale_count == 1);
+  pages.baseline = false;
+  assert(browser_match(&pages, (const unsigned char *)vault, strlen(vault)));
+  assert(!strcmp(pages.url, "https://vikingfile.com/f/jjeEUkyPki"));
   // A query whose "&" the page escaped as JSON still yields the address the browser will request.
   const char *escaped = "fetch(\"https://cdn9.example.ru/9f3/PPSA01285.exfat?token=8f2a\\u0026expires=99\");";
   memset(match.url, 0, sizeof match.url);

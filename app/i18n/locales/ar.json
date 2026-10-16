@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} فشل",
   "downloads.summary.inProgress": "{count} قيد التقدم",
   "downloads.summary.paused": "{count} مؤقف",
-  "downloads.switchedSource": "{failed} لم ينجح، لذا تحول Overdrive إلى {next}.",
   "downloads.timeLeft": "{time} متبقي",
   "downloads.title": "التحميلات",
   "downloads.unavailable": "التحميلات غير متوفرة",

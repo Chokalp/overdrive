@@ -16,6 +16,22 @@ const char *browser_capture_prefix(const char *url) {
     if (!strncmp(url, browser_capture_prefixes[i], strlen(browser_capture_prefixes[i]))) return browser_capture_prefixes[i];
   return NULL;
 }
+// A LinkVault vault hides which Vikingfile page it leads to, so its capture first takes the page the
+// vault opens, /f/<10-character id>, whose public metadata then names the file exactly.
+static bool page_id_char(char c) {
+  return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+const char *const browser_capture_page_prefixes[] = {"https://vikingfile.com/f/", "https://vik1ngfile.site/f/"};
+bool browser_capture_page_url(const char *url) {
+  for (size_t i = 0; i < sizeof browser_capture_page_prefixes / sizeof *browser_capture_page_prefixes; i++) {
+    const size_t length = strlen(browser_capture_page_prefixes[i]);
+    if (strncmp(url, browser_capture_page_prefixes[i], length)) continue;
+    size_t id = 0;
+    while (page_id_char(url[length + id])) id++;
+    return id == 10 && !url[length + id];
+  }
+  return false;
+}
 // Hosts whose check only a console browser can pass: Akirabox's Turnstile, Datanodes' and
 // Filekeeper's Cloudflare pass, LinkVault's mirror pages. Their file link becomes a real address
 // only after the human acts, so it is taken from the browser once the file starts. LinkVault
@@ -139,14 +155,14 @@ static bool host_page(const char *host, size_t length, const char *path) {
 // the real address inside its query is not the file. Only the app's range probe decides whether
 // the captured URL really is the file.
 #define BROWSER_CAPTURE_NAME_MAX 320
-bool browser_capture_anchor_url(const char *anchor, const char *url) {
+int browser_capture_anchor_url(const char *anchor, const char *url) {
   if (!anchor || !*anchor || !url || strncmp(url, "https://", 8)) return false;
   const char *host = url + 8;
   const char *slash = strchr(host, '/');
   if (!slash || slash == host) return false;
   const size_t length = (size_t)(slash - host);
   if (length > 256 || !memchr(host, '.', length) || strchr(url, '#')) return false;
-  if (opaque_file_route(host, length, slash)) return true;
+  if (opaque_file_route(host, length, slash)) return BROWSER_CAPTURE_UNBOUND;
   if (host_page(host, length, slash) || !browser_capture_file_token(url)) return false;
   /* The file's own name: the path's last segment, without the query. An advertisement that keeps
    * the real address inside its query has no file name of its own. */
@@ -163,8 +179,8 @@ bool browser_capture_anchor_url(const char *anchor, const char *url) {
     named++;
   }
   name[named] = 0;
-  if (named && browser_capture_file_token(name) && contains(name, anchor)) return true;
-  return file_host(host, length) && browser_capture_file_token(url);
+  if (named && browser_capture_file_token(name) && contains(name, anchor)) return BROWSER_CAPTURE_BOUND;
+  return file_host(host, length) && browser_capture_file_token(url) ? BROWSER_CAPTURE_UNBOUND : 0;
 }
 // An empty filename accepts any safe one: link pages don't tell which file they lead to.
 bool browser_capture_url(const char *filename, const char *url) {

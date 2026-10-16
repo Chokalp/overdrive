@@ -108,8 +108,10 @@
     "downloads.emptyDetail": "Games you download appear here with their progress.",
     "downloads.extractedReady": "{parts, select, all {All parts} other {Archive}} verified and extracted. Ready to install.",
     "downloads.extractedTo": "Extracted to {path}",
+    "downloads.extractedLeft": "Other folders stayed in {path}.",
     "downloads.installFailed": "The console refused the package. Press Install to try again.",
     "downloads.installHint": "Close Overdrive to finish: ShadowMount installs once no game is open.",
+    "downloads.titleMismatch": "The files are {found}, the game is {expected}: another game, or another region?",
     "downloads.installRequested": "Install requested. Close Overdrive to finish: ShadowMount installs once no game is open.",
     "downloads.installed": "Installed. It's on the home screen.",
     "downloads.notice.captured": "Link captured, return to Overdrive",
@@ -143,7 +145,6 @@
     "downloads.summary.failed": "{count} failed",
     "downloads.summary.inProgress": "{count} in progress",
     "downloads.summary.paused": "{count} paused",
-    "downloads.switchedSource": "{failed} didn't work, so Overdrive switched to {next}.",
     "downloads.timeLeft": "{time} left",
     "downloads.title": "Downloads",
     "downloads.unavailable": "Downloads are unavailable",
@@ -453,5 +454,10 @@
     "capture.validating": "Checking the captured file\u2026",
     "capture.detail": "Don't press Download or any ad: the link is captured by itself and the download starts automatically. You have 3 minutes.",
     "capture.link.title": "Download verification",
-    "capture.link.detail": "Pass the check: the link is captured by itself. Cancel any download the browser starts. You have 5 minutes."
+    "capture.link.detail": "Pass the check: the link is captured by itself. Cancel any download the browser starts. You have 5 minutes.",
+    "capture.confirm.title": "Is this the right file?",
+    "capture.confirm.detail": "The host doesn't say which game this file is. Download it only if it's the game you chose.",
+    "capture.confirm.noName": "File with no name",
+    "capture.confirm.accept": "Download it",
+    "capture.confirm.refuse": "Keep looking"
   }

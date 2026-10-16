@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} ব্যর্থ",
   "downloads.summary.inProgress": "{count} চলছে",
   "downloads.summary.paused": "{count} থেমেছে",
-  "downloads.switchedSource": "{failed} কাজ করল না, তাই Overdrive {next} এ চলে গেছে।",
   "downloads.timeLeft": "{time} বাকি",
   "downloads.title": "ডাউনলোড",
   "downloads.unavailable": "ডাউনলোড অনুপলব্ধ",

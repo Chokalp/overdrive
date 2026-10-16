@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} ناکام",
   "downloads.summary.inProgress": "{count} جاری ہے",
   "downloads.summary.paused": "{count} توقف دی گئی",
-  "downloads.switchedSource": "{failed} کام نہیں کیا، تو Overdrive نے {next} میں تبدیل کر دیا۔",
   "downloads.timeLeft": "{time} باقی ہے",
   "downloads.title": "ڈاؤن لوڈز",
   "downloads.unavailable": "ڈاؤن لوڈز دستیاب نہیں",
