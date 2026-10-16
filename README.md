@@ -234,20 +234,24 @@ Each run puts `Overdrive.exfat` and `update.zip` in a draft release named after
 `app/version.js`, which only maintainers can see.
 
 The same build locally, on any Linux with the packages the workflow installs (`clang-18`,
-`llvm-18`, `cmake`, `ninja-build`, `nodejs`, `npm`, `zlib1g-dev`, `build-essential`,
-`pkg-config`, `unzip`, `curl`, `exfatprogs`, and Pillow from `ps5-react/requirements.txt`):
+`llvm-18`, `llvm-18-dev`, `cmake`, `ninja-build`, `nasm`, `nodejs`, `npm`, `zlib1g-dev`,
+`build-essential`, `pkg-config`, `unzip`, `zip`, `curl`, `exfatprogs`, and Pillow from
+`ps5-react/requirements.txt`), from the repository root:
 
 ```sh
-cd ps5-react
-python3 tools/build_ps5.py --app-dir ../app --llvm /usr/bin
-sudo ../packaging/make-exfat.sh dist/PPSA99058 ../Overdrive.exfat
+npm run build        # the app, then Overdrive.exfat and update.zip here
+npm run build:app    # the app only, in ps5-react/dist/PPSA99058
 ```
 
-The build downloads its pinned dependencies into `ps5-react/.deps` and writes the app folder, a
-`.zip` and a `.receipt.json` into `ps5-react/dist`. It verifies the result itself
-(`tools/verify.py`), so a green build means the payload structure and signatures check out.
-`--llvm /usr/bin` points it at the system clang; upstream defaults to the Homebrew LLVM path
-because macOS is its supported development environment.
+`packaging/build.sh` behind them finds LLVM 18 where apt or Homebrew put it (set
+`LLVM=<its bin directory>` otherwise), builds through `ps5-react/tools/build_ps5.py`, then runs
+`packaging/make-exfat.sh` under `sudo`, since the image is mounted to be filled. The build
+downloads its pinned dependencies into `ps5-react/.deps` and writes the app folder, a `.zip` and a
+`.receipt.json` into `ps5-react/dist`. It verifies the result itself (`tools/verify.py`), so a
+green build means the payload structure and signatures check out.
+
+`npm run preview` opens the app in the desktop preview, `npm run dev` also rebuilds it on every
+save, and `npm test` runs the framework's checks.
 
 The image is a plain exFAT volume whose root is the app folder, with 64 KiB clusters and the
 label `OVERDRIVE`. To release a new version, raise the version in `app/version.js` and
