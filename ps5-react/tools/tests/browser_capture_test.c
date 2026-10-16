@@ -197,6 +197,22 @@ int main(void) {
       assert(!strcmp(longest.url, filekeeper));
     }
   }
+  // Buzzheavier's file server, as its Download button's hx-redirect answer names it (2026-10-17).
+  {
+    const char *buzz = "https://ts.buzzheavier.com/d/vsym6i66c6st?v=mqq2UM8yPmme6XOi01QgF6Qe7xJrqwGMtD34EAS3xFREvk1vXD7bxiLAv94SHzs6D1BV7Ai4tb_mZxkOnBw_Di69Bb2_Wv1KDh0Ns6LgpVFRX0kfPfwrwApCJRYOarUI-OVgeGHpPuBrCdZUhlzldTPZmE-hV9cBy8ALIdmNIodrM648z07x8tS-";
+    assert(browser_capture_anchor_url("PPSA16901", buzz) == BROWSER_CAPTURE_UNBOUND);
+    assert(!browser_capture_anchor_url("PPSA16901", "https://buzzheavier.com/d/vsym6i66c6st?v=mqq2UM8yPmme6XOi01QgF6Qe7xJrqwGMtD34"));
+    assert(!browser_capture_anchor_url("PPSA16901", "https://buzzheavier.com/vsym6i66c6st"));
+    assert(!browser_capture_anchor_url("PPSA16901", "https://ts.buzzheavier.com/d/vsym6i66c6st"));
+    assert(!browser_capture_anchor_url("PPSA16901", "https://ts.buzzheavier.com/d/vsym6i66c6st?v=short"));
+    assert(!browser_capture_anchor_url("PPSA16901", "https://ts.buzzheavier.com/d/vsym6i66c6st?v=mqq2UM8yPmme6XOi01QgF6Qe7xJrqwGMtD34EAS&x=1"));
+    assert(!browser_capture_anchor_url("PPSA16901", "https://ts.buzzheavier.com.evil.test/d/vsym6i66c6st?v=mqq2UM8yPmme6XOi01QgF6Qe7xJrqwGMtD34"));
+    char header[400];
+    snprintf(header, sizeof header, "HTTP/1.1 204 No Content\r\nhx-redirect: %s\r\n\r\n", buzz);
+    BrowserMatch heard = {.prefix = "https://", .filename = "PPSA16901", .anchor = true};
+    assert(browser_match(&heard, (const unsigned char *)header, strlen(header)));
+    assert(!strcmp(heard.url, buzz));
+  }
   // Page mode: the Vikingfile file page a LinkVault vault opens, and nothing else.
   assert(browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki"));
   assert(browser_capture_page_url("https://vik1ngfile.site/f/jjeEUkyPki"));

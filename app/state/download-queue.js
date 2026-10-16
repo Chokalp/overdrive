@@ -207,7 +207,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
     } : formats.artifact(release, root2);
     function reresolve(job2) {
       const source2 = job2.parts ? job2.currentSource : job2.release;
-      if ((job2.reresolved || 0) >= 2 || ["direct", "browser", "datanodes", "manifest", "unavailable"].includes(sourceKind(source2))) return false;
+      if ((job2.reresolved || 0) >= 2 || ["direct", "browser", "datanodes", "buzzheavier", "manifest", "unavailable"].includes(sourceKind(source2))) return false;
       job2.reresolved = (job2.reresolved || 0) + 1;
       delete job2.options;
       if (job2.parts) delete job2.parts[job2.partIndex].options;

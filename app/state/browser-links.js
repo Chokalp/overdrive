@@ -26,6 +26,8 @@ import { webURL } from './download-sources.js';
   // browser_url.c holds the same rules.
   function opaqueFileRoute(host, path) {
     if (/^a-[a-z0-9-]+\.1fichier\.com$/.test(host)) return /^\/[A-Za-z0-9]{10,256}$/.test(path);
+    // Buzzheavier's file server, as its Download button's hx-redirect names it.
+    if (/^[a-z0-9-]+\.buzzheavier\.com$/.test(host) && !host.startsWith("www.")) return /^\/d\/[A-Za-z0-9]{8,32}\?v=[A-Za-z0-9_-]{32,1024}$/.test(path);
     if (/^tunnel\d+\.dlproxy\.uk$/.test(host)) return /^\/[^/?]{8}\/[^/?]{32,1024}\?sig=[^&]+$/.test(path) && /^[!-~]+$/.test(path) && !path.includes("\\");
     return false;
   }

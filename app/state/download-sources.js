@@ -127,7 +127,9 @@
       if (kind === "unavailable") throw new Error("Source unavailable: no download URL.");
       if (kind === "direct") return { url: webURL(url).url, rejectHtml: true };
       if (kind === "manifest") throw new Error("Split manifests must be resolved by the queue.");
-      if (kind === "browser" || kind === "datanodes") throw new BrowserRequired(url);
+      // Buzzheavier's pages sit behind a Cloudflare check only a browser passes (403 to the app,
+      // 2026-10-17): its file link is captured from the console's browser, as Datanodes' is.
+      if (kind === "browser" || kind === "datanodes" || kind === "buzzheavier") throw new BrowserRequired(url);
       if (kind === "filekeeper") return fileKeeper(url, signal);
       const response = await request(url, { signal });
       const base = response.url || url;
@@ -136,18 +138,6 @@
       let candidate;
       if (kind === "mediafire") candidate = anchor(html, "downloadButton");
       if (kind === "vikingfile") candidate = anchor(html, "download-link");
-      if (kind === "buzzheavier") {
-        const button = (html.match(/<[a-z]+\b[^>]*>/gi) || []).find((tag) => attribute(tag, "hx-get")?.includes("/download"));
-        const route = button && attribute(button, "hx-get");
-        if (route) {
-          const next = await request(absolute(route, base), {
-            signal,
-            followRedirects: false,
-            headers: { "HX-Request": "true", "HX-Current-URL": base }
-          });
-          candidate = next.headers?.["hx-redirect"] || next.headers?.location;
-        }
-      }
       if (!candidate) throw new BrowserRequired(url);
       return direct(absolute(candidate, base), signal);
     }

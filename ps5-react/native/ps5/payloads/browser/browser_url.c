@@ -113,6 +113,19 @@ static bool opaque_file_route(const char *host, size_t length, const char *path)
       if (!token((unsigned char)*at)) return false;
     return size >= 10 && size <= 256;
   }
+  /* Buzzheavier's Download button gets an hx-redirect to its file server, ts.buzzheavier.com/d/<id>
+   * ?v=<signed token>, which names no file: the answer's Content-Disposition does (observed
+   * 2026-10-17). Its page sits on buzzheavier.com itself, so a subdomain is required. */
+  if (host_under(host, length, "buzzheavier.com") && !host_equals(host, length, "buzzheavier.com") && !strncmp(path, "/d/", 3)) {
+    const char *at = path + 3;
+    size_t id = 0;
+    while (token((unsigned char)at[id])) id++;
+    if (id < 8 || id > 32 || strncmp(at + id, "?v=", 3)) return false;
+    size_t size = 0;
+    for (at += id + 3; *at; at++, size++)
+      if (!token((unsigned char)*at) && *at != '-' && *at != '_') return false;
+    return size >= 32 && size <= 1024;
+  }
   if (host_under(host, length, "dlproxy.uk") && length > 17 && host_equals(host, 6, "tunnel")) {
     for (size_t i = 6; i < length - 11; i++)
       if (host[i] < '0' || host[i] > '9') return false;

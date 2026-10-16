@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — Buzzheavier's file server
+
+- Anchor mode accepts Buzzheavier's file server, `<server>.buzzheavier.com/d/<id>?v=<signed token>`,
+  which its Download button's `hx-redirect` answer names and which carries no file name (observed
+  2026-10-17; the file's name comes in its Content-Disposition). Its pages stay on the bare domain.
+
 ## Unreleased — links up to 2047 bytes
 
 - A captured link may be up to 2047 bytes (was 543, Orbit Store's limit): FileKeeper hands its file
