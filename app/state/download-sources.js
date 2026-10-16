@@ -91,33 +91,28 @@
       if (response.status >= 300) throw new BrowserRequired(url, "The final file redirects with custom headers. Choose another source.");
       return { url: webURL(response.url || url).url, headers, rejectHtml: true };
     }
-    // FileKeeper's page has no human check: /<id> redirects to /download with the file in a
-    // file_code cookie, a five-second countdown runs, then its Free Download button posts
-    // op=download2 with the countdown element's fields, and the answer redirects to the file on
-    // Datanodes' dlproxy.uk gateway. The app carries the cookie itself (a redirect it follows would
-    // drop it, and /download without it is a 404), waits the countdown out and posts the same form.
+    // FileKeeper's page has no human check: a five-second countdown, then its Free Download button
+    // posts op=download2 with the file's code, and the answer redirects to the file on Datanodes'
+    // dlproxy.uk gateway. The page itself keeps the file in a cookie the engine never hands to the
+    // app, so the app posts the same form to the file's own address, /<code>, which needs none,
+    // after waiting the countdown out.
     async function fileKeeper(url, signal) {
-      const first = await request(url, { signal, followRedirects: false });
-      const code = /file_code=([a-z0-9]{12})/i.exec(first.headers?.["set-cookie"] || "")?.[1];
-      const cookie = code ? { Cookie: `file_code=${code}` } : {};
-      const page = first.status >= 300 && first.headers?.location ? absolute(first.headers.location, url) : url;
-      const response = page === url ? first : await request(page, { signal, headers: cookie });
-      const countdown = ((await response.text()).match(/<[a-z]+\b[^>]*\bid=["']download-countdown["'][^>]*>/i) || [])[0];
-      const field = (name) => (countdown && attribute(countdown, `data-${name}`)) ?? "";
-      if (!countdown || !/^[a-z0-9]{12}$/i.test(field("code")) || field("has-captcha") === "true" || field("has-password") === "true")
-        throw new BrowserRequired(url);
+      const code = /^\/([a-z0-9]{12})(?:[/?]|$)/i.exec(webURL(url).path)?.[1];
+      if (!code) throw new BrowserRequired(url);
+      console.log("[sources] filekeeper", code, "- waiting its countdown, then posting its form");
       await pause(FILEKEEPER_COUNTDOWN_MS, signal);
       if (signal?.aborted) throw new Error("Cancelled.");
-      const form = { op: "download2", id: field("code"), rand: field("rand"), referer: field("referer"), method_free: field("method"), down_direct: "1" };
-      const next = await request(page, {
+      const next = await request(url, {
         signal,
         method: "POST",
         followRedirects: false,
-        headers: { ...cookie, "Content-Type": "application/x-www-form-urlencoded", Referer: page },
-        body: Object.entries(form).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")
+        headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: url },
+        body: `op=download2&id=${code}&rand=&referer=&method_free=&down_direct=1`
       });
-      if (!next.headers?.location) throw new BrowserRequired(url);
-      return direct(absolute(next.headers.location, page), signal);
+      const location2 = next.headers?.location;
+      console.log("[sources] filekeeper answered HTTP", next.status, location2 ? `with ${webURL(absolute(location2, url)).host}` : "without a file");
+      if (!location2) throw new Error("Source unavailable: FileKeeper gave no file. Choose another source.");
+      return direct(absolute(location2, url), signal);
     }
     async function resolve2(release, { signal, directURL } = {}) {
       if (directURL) return direct(directURL, signal);
