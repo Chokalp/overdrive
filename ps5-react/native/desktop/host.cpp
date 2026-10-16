@@ -253,11 +253,13 @@ struct Host {
     if (!runtime_started) return false;
     // PS5_REACT_PROFILE=<file> samples JavaScript; the folded stacks are written there on exit.
     if (std::getenv("PS5_REACT_PROFILE")) profiler.start(JS_GetRuntime(er_runtime_context()), 1000);
-    if (controlled) {
-      // Read when the bundle loads: Text reports its content to the inspector only then.
+    {
+      // Read when the bundle loads: the pointer hit-test exists only where a mouse can call it, and
+      // Text reports its content to the inspector only under the control channel.
       JSContext* ctx = er_runtime_context();
       JSValue global = JS_GetGlobalObject(ctx);
-      JS_SetPropertyStr(ctx, global, "__ps5ReactInspecting", JS_TRUE);
+      JS_SetPropertyStr(ctx, global, "__ps5ReactPointer", JS_TRUE);
+      if (controlled) JS_SetPropertyStr(ctx, global, "__ps5ReactInspecting", JS_TRUE);
       JS_FreeValue(ctx, global);
     }
     er_register_assets();

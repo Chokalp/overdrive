@@ -8,9 +8,19 @@
   VideoToolbox; the PS5 build is unchanged. Build with `CC=clang CXX=clang++`: GCC rejects a
   bounds warning in `archive_preflight.cpp`.
 - A mouse drives the preview as a developer's pointer: a left click focuses the smallest navigable
-  element under it (`__ps5ReactHit`, a fraction of the screen each way) and confirms, a right click
-  is `back`, and the wheel is `up`/`down`. `ps5_drive.py click <x> <y>` does the same in the
-  snapshot's logical pixels.
+  element under it and confirms, a right click is `back`, and the wheel is `up`/`down`.
+  `ps5_drive.py click <x> <y>` does the same in the snapshot's logical pixels. The click goes
+  through `globalThis.__ps5ReactHit(nx, ny)`, a hit-test over the focus manager's nodes that takes
+  the point as fractions of the screen; the desktop host maps the window point through the frame's
+  letterbox first.
+- None of this reaches the console. The Linux stand-ins, the mouse handling and the `click` command
+  live in `native/desktop/` and `tools/`, which the PS5 build never compiles; `ffmpeg.ps5()` and the
+  PS5 `rar-extract` link line are untouched. The one shared file is the JS bundle: `__ps5ReactHit` is
+  defined only when the host sets `globalThis.__ps5ReactPointer` before the bundle loads, which the
+  desktop host does and the PS5 host does not, so on the console the hook is never created and
+  nothing calls it. Its source text (about 600 bytes of the 2.4 MB bundle) still ships, as the
+  existing `__ps5ReactInspect` and `__ps5ReactFocus` dev hooks do; stripping it would need a
+  target-aware bundle step, a change to the PS5 build path this entry deliberately avoids.
 
 ## Unreleased — one capture for every browser-only provider
 
