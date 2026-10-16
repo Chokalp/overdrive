@@ -144,15 +144,17 @@ import { webURL } from './download-sources.js';
         /html|json|xml|text\//i.test(response.headers?.["content-type"] || "") ||
         ranged && (await response.text()).length !== 1 || !Number.isSafeInteger(bytes) || bytes <= 0)
       throw new Error("Captured file failed validation or expired. Reopen the page and retry.");
-    if (metadata.sizeBytes && (bytes + CATALOG_SLACK < metadata.sizeBytes || bytes > metadata.sizeBytes + CATALOG_SLACK))
-      throw new Error("Captured file is not the size of the selected release. Reopen the page and retry.");
-    // Bound to the game when its own name, or the one the server declares, carries the title id.
-    // A file that names no game and has no catalog size to compare could be any file the browser
-    // fetched, so the player confirms it before it downloads.
+    // Bound to the game when its own name, or the one the server declares, carries the title id:
+    // that outweighs the catalog's size, which is rounded on FileKeeper, the whole vault's on
+    // LinkVault and the extracted game's on some Datanodes sources (Black Myth Wukong: 168 GB for a
+    // 90 GB archive). Only a file that names no game is held to that size, and one with no size to
+    // compare could be any file the browser fetched, so the player confirms it before it downloads.
     const urlName = webURL(link).path.split("?")[0].split("/").pop() || "";
     const filename = dispositionName(response.headers?.["content-disposition"]) || (FILE_EXTENSIONS.test(urlName) ? decodedName(urlName) : "");
     const anchor = (metadata.anchor || "").toLowerCase();
     const bound = Boolean(anchor) && [urlName, filename].some((name) => name.toLowerCase().includes(anchor));
+    if (!bound && metadata.sizeBytes && (bytes + CATALOG_SLACK < metadata.sizeBytes || bytes > metadata.sizeBytes + CATALOG_SLACK))
+      throw new Error("Captured file is not the size of the selected release. Reopen the page and retry.");
     return { url: link, expectedBytes: bytes, filename, unbound: !bound && !metadata.sizeBytes };
   }
 
