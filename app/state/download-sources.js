@@ -112,7 +112,13 @@
       const location2 = next.headers?.location;
       console.log("[sources] filekeeper answered HTTP", next.status, location2 ? `with ${webURL(absolute(location2, url)).host}` : "without a file");
       if (!location2) throw new Error("Source unavailable: FileKeeper gave no file. Choose another source.");
-      return direct(absolute(location2, url), signal);
+      // The catalog's FileKeeper sizes are rounded (1 GiB for a 1.6 GB file), and the engine holds a
+      // download to its expected size exactly: the file's own length, from the same HEAD, replaces it.
+      const file = absolute(location2, url);
+      const head = await request(file, { method: "HEAD", signal });
+      if (htmlResponse(head) || head.status >= 300) throw new BrowserRequired(url);
+      const bytes = Number(head.headers?.["content-length"]);
+      return { url: webURL(head.url || file).url, rejectHtml: true, ...Number.isSafeInteger(bytes) && bytes > 0 ? { expectedBytes: bytes } : {} };
     }
     async function resolve2(release, { signal, directURL } = {}) {
       if (directURL) return direct(directURL, signal);

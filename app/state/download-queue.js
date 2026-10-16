@@ -293,7 +293,8 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
             job2.options = {
               ...resolved,
               rejectHtml: true,
-              expectedBytes: job2.release.sizeBytes || void 0,
+              // A source that reads its file's real length (FileKeeper) outweighs the catalog's.
+              expectedBytes: resolved.expectedBytes || job2.release.sizeBytes || void 0,
               sha256: job2.release.sha256 || void 0
             };
             delete job2.directURL;
@@ -758,7 +759,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           job2.currentSource = source2;
           if (!part.options) {
             const resolved = await sources.resolve(source2, { signal, directURL: job2.directURL });
-            part.options = { ...resolved, expectedBytes: source2.sizeBytes || void 0, sha256: source2.sha256 || void 0 };
+            part.options = { ...resolved, expectedBytes: resolved.expectedBytes || source2.sizeBytes || void 0, sha256: source2.sha256 || void 0 };
             delete job2.directURL;
             change();
           }
