@@ -32,6 +32,11 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
   // A LinkVault page adds its own check and a mirror page before the host's, so a link capture gets
   // the payload's longest window.
   var LINK_CAPTURE_SECONDS = 300;
+  // The folder an extraction is written to, and its game's under homebrew: the source's file name
+  // without the ".binary" a source of unknown format downloads under. Jobs extracted before used it
+  // with that suffix, so ownedPaths claims both.
+  var legacyFolderName = (release) => release.filename.replace(/[^a-z0-9_.-]/gi, "_");
+  var folderName = (release) => legacyFolderName({ filename: release.filename.replace(/[.](?:binary|bin)$/i, "") });
   // The payload's first pass, before the page opens, fingerprints the links the browser already
   // holds; the task turns "capturing" when it ends (or settles if it fails), and only then may the
   // page open, so no link the page makes is counted as old.
@@ -427,6 +432,48 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       delete job2.routing;
       change();
     }
+    // gameFolder follows a lone folder down and gives up beside a second one, as a dump with its
+    // patch, DLC or backport folder next to it. Only when it finds nothing, every folder holding a
+    // game is listed, and one is taken only when exactly one is plainly the game: not named a patch
+    // or an update, with the chosen game's title id when several are left. Else nothing moves.
+    var PATCH_FOLDER = /(?:^|[-_ .(\[])(?:patch|update|upd)(?:$|[-_ .)\]\d])/i;
+    function gameFolders(output) {
+      const found = [];
+      const queue = [{ path: output, depth: 0 }];
+      for (let visited = 0; queue.length && visited < 2e3 && found.length < 16; visited++) {
+        const { path, depth } = queue.shift();
+        if (fs.exists(`${path}/eboot.bin`) && fs.exists(`${path}/sce_sys/param.json`)) {
+          found.push(path);
+          continue;
+        }
+        if (depth >= 6) continue;
+        let children;
+        try {
+          children = fs.readDir(path).filter((entry2) => entry2.isDirectory && !entry2.name.startsWith(".ps5-react"));
+        } catch {
+          continue;
+        }
+        for (const child of children) queue.push({ path: `${path}/${child.name}`, depth: depth + 1 });
+      }
+      return found;
+    }
+    function findGame(job2, output) {
+      const lone = gameFolder(output);
+      if (lone) return { folder: lone, beside: false };
+      const found = gameFolders(output);
+      const shown = (path) => path.slice(output.length) || "/";
+      if (found.length) console.log(`[download-queue] game folders in ${output}: ${found.map(shown).join(", ")}`);
+      const name = (path) => path.slice(path.lastIndexOf("/") + 1);
+      let games = found.filter((path) => !PATCH_FOLDER.test(name(path)));
+      const titled = games.filter((path) => String(titleIn(path) || "").toUpperCase() === String(job2.titleId || "").toUpperCase());
+      if (titled.length) games = titled;
+      if (games.length !== 1) {
+        if (found.length) console.log(`[download-queue] none of them is plainly the game; left where they were extracted`);
+        return { folder: null, beside: false };
+      }
+      console.log(`[download-queue] taking ${shown(games[0])} as the game`);
+      return { folder: games[0], beside: true };
+    }
     function gameFolder(output) {
       for (let depth = 0; depth <= 16; depth++) {
         if (fs.exists(`${output}/eboot.bin`) && fs.exists(`${output}/sce_sys/param.json`)) return output;
@@ -474,7 +521,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       storageIdentity(job2);
       const directory2 = `${job2.root}/downloads/extracted`;
       fs.mkdir(directory2, { recursive: true });
-      job2.output || (job2.output = `${directory2}/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}`);
+      job2.output || (job2.output = `${directory2}/${folderName(job2.release)}`);
       if (job2.publishTo && fs.exists(job2.publishTo)) job2.output = job2.publishTo;
       return {
         sources: files,
@@ -583,7 +630,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       }
       const images = (result.artifacts || []).filter((path) => /\.(ffpfsc|ffpfs|ffpkg|exfat)$/i.test(path));
       if (images.length) {
-        const destination = `${job2.root}/homebrew/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}-extracted`;
+        const destination = `${job2.root}/homebrew/${folderName(job2.release)}-extracted`;
         fs.mkdir(`${job2.root}/homebrew`, { recursive: true });
         job2.publishTo = destination;
         change();
@@ -601,19 +648,22 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         job2.state = "extracted";
         job2.message = t("downloads.extractedTo", { path: job2.output });
         const packaged = (result.artifacts || []).filter((path) => /\.(pkg|fpkg)$/i.test(path));
-        const folder = packaged.length ? null : gameFolder(job2.output);
+        const { folder, beside } = packaged.length ? { folder: null, beside: false } : findGame(job2, job2.output);
         if (packaged.length) {
           job2.packages = packaged.map((path) => `${job2.output}/${path}`);
           job2.state = "installer-required";
           job2.message = t("downloads.packagesExtracted", { path: job2.output });
         } else if (folder) {
           noteTitle(job2, titleIn(folder));
-          const destination = `${job2.root}/homebrew/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}-app`;
+          const destination = `${job2.root}/homebrew/${folderName(job2.release)}-app`;
           fs.mkdir(`${job2.root}/homebrew`, { recursive: true });
           if (fs.exists(destination)) throw new Error("Extracted destination already exists; preserve it and inspect before retrying.");
           storageIdentity(job2);
+          const extracted = job2.output;
           fs.rename(folder, destination);
-          if (folder !== job2.output) await fs.removeAsync(job2.output);
+          // Whatever the wider search found the game beside (a patch, DLC, another game) stays where
+          // it was extracted; a lone folder's leftovers are only the archive's loose files.
+          if (folder !== extracted && !beside) await fs.removeAsync(extracted);
           await openUp(destination);
           job2.output = destination;
           job2.publishTo = destination;
@@ -621,6 +671,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           job2.artifact.destination = destination;
           job2.state = "downloaded";
           job2.message = t("downloads.extractedReady", { parts: job2.parts ? "all" : "one" });
+          if (beside) job2.message = `${job2.message} ${t("downloads.extractedLeft", { path: extracted })}`;
         }
       }
       change();
@@ -664,13 +715,13 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         const parts = path.startsWith(`${job2.root}/`) ? path.slice(job2.root.length + 1).split("/") : [];
         return !parts.some((part) => ["", ".", ".."].includes(part)) && (parts[0] === "homebrew" && parts.length >= 2 || parts[0] === "downloads" && parts.length >= 3);
       };
-      const extracted = job2.output && `${job2.root}/downloads/extracted/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}`;
+      const extracted = job2.output && [folderName(job2.release), legacyFolderName(job2.release)].map((name) => `${job2.root}/downloads/extracted/${name}`);
       const paths = [
         job2.artifact.destination,
         job2.downloadDestination,
         job2.output,
         job2.publishTo,
-        extracted,
+        ...extracted || [],
         job2.release.parts && setDirectory(job2)
       ].filter(Boolean).flatMap((path) => [path, ...[".complete", ".complete.tmp", ".part", ".resume", ".resume.tmp"].map((suffix) => path + suffix)]);
       return [...new Set(paths)].filter((path) => managed(path) && !jobs.some((other) => other !== job2 && [other.artifact.destination, other.downloadDestination, other.output, other.publishTo].some((owned2) => owned2 && (owned2 === path || owned2.startsWith(`${path}/`)))));
