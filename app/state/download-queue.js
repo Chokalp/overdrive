@@ -81,6 +81,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       delete job2.captureState;
       delete job2.captureError;
       delete job2.captureFile;
+      delete job2.fallbacks;
       if (job2.state === "installing") return { ...job2, state: "installer-required" };
       if (job2.state === "extracting") job2.written = job2.total;
       if (job2.state === "removing") {
@@ -199,23 +200,6 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       destination: `${root2}/downloads/extracted/${release.filename}`,
       nextAction: "extracted"
     } : formats.artifact(release, root2);
-    function failOver(job2, error2) {
-      if (job2.written || job2.parts?.some((part) => part.written) || /space|storage|drive|disconnected/i.test(cause(error2.message))) return false;
-      while (job2.fallbacks?.length) {
-        const next = job2.fallbacks.shift();
-        const artifact2 = artifactFor(next, job2.root);
-        if (fs.exists(artifact2.destination) || fs.exists(`${artifact2.destination}.part`) || jobs.some((other) => other !== job2 && other.artifact.destination === artifact2.destination)) continue;
-        job2.message = t("downloads.switchedSource", { failed: job2.release.provider, next: next.provider });
-        job2.release = { ...next };
-        job2.artifact = artifact2;
-        job2.total = next.sizeBytes || null;
-        for (const key of ["options", "browserUrl", "directURL", "parts", "partIndex", "currentSource", "downloadDestination", "inspected", "adopted"]) delete job2[key];
-        job2.error = "";
-        job2.state = "queued";
-        return true;
-      }
-      return false;
-    }
     function reresolve(job2) {
       const source2 = job2.parts ? job2.currentSource : job2.release;
       if ((job2.reresolved || 0) >= 2 || ["direct", "browser", "datanodes", "manifest", "unavailable"].includes(sourceKind(source2))) return false;
@@ -358,13 +342,14 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       } catch (error2) {
         console.log("[download-queue] transfer stopped:", error2.message);
         // The engine words every 401/403 as a possible browser check; from Archive.org it is a
-        // restricted or removed item, so it fails over like a dead link and reads as one.
+        // restricted or removed item, so it reads as a dead link.
         const refused = archiveRefusal(job2.parts ? job2.currentSource : job2.release, cause(error2.message));
         if (refused) error2 = new Error(`Source unavailable: HTTP ${refused}. Choose another source.`);
         const browser = !refused && (error2 instanceof BrowserRequired || /browser verification required/i.test(cause(error2.message)));
         const retried = job2.state !== "pausing" && !job2.cancelling && browser && active2.transferring && reresolve(job2);
-        const switched = !retried && job2.state !== "pausing" && !job2.cancelling && failOver(job2, error2);
-        if (!retried && !switched && job2.state !== "pausing") {
+        // A source that fails stays failed: the player picks another (the automatic switch to an
+        // "equivalent" source was removed on 2026-10-16 at the user's request).
+        if (!retried && job2.state !== "pausing") {
           job2.state = browser ? "awaiting-browser" : "failed";
           job2.error || (job2.error = job2.adopted && STALE_PARTIAL.test(cause(error2.message)) ? ADOPTED : error2.message);
           if (browser) {
@@ -1279,8 +1264,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         listener(snapshot());
         return () => listeners4.delete(listener);
       },
-      /** `alternatives`: other sources of the game, best first, tried in order if this one can't start. */
-      enqueue(game, release, root2, alternatives = []) {
+      enqueue(game, release, root2) {
         const id = `${game.id}/${release.id}`;
         const existing = jobs.find((job2) => job2.id === id);
         if (existing) return existing.id;
@@ -1305,7 +1289,6 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           title: game.title,
           release: { ...release },
           requestedId: release.id,
-          fallbacks: alternatives.slice(0, 4).map((item) => ({ ...item })),
           root: root2,
           artifact: artifact2,
           state: "queued",

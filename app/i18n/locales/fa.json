@@ -143,7 +143,6 @@
     "downloads.summary.failed": "{count} ناموفق",
     "downloads.summary.inProgress": "{count} در حال انجام",
     "downloads.summary.paused": "{count} متوقف‌شده",
-    "downloads.switchedSource": "{failed} کار نکرد، پس Overdrive به {next} سوییچ کرد.",
     "downloads.timeLeft": "{time} باقی‌مانده",
     "downloads.title": "دانلودها",
     "downloads.unavailable": "دانلودها در دسترس نیست",

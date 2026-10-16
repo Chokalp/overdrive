@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} विफल",
   "downloads.summary.inProgress": "{count} प्रगति में",
   "downloads.summary.paused": "{count} रोका गया",
-  "downloads.switchedSource": "{failed} काम नहीं आया, इसलिए Overdrive ने {next} पर स्विच किया।",
   "downloads.timeLeft": "{time} बचा",
   "downloads.title": "डाउनलोड",
   "downloads.unavailable": "डाउनलोड अनुपलब्ध हैं",

@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} fallido",
   "downloads.summary.inProgress": "{count} en progreso",
   "downloads.summary.paused": "{count} pausado",
-  "downloads.switchedSource": "{failed} no funcionó, así que Overdrive cambió a {next}.",
   "downloads.timeLeft": "{time} restante",
   "downloads.title": "Descargas",
   "downloads.unavailable": "Las descargas no están disponibles",

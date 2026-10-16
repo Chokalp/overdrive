@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} gagal",
   "downloads.summary.inProgress": "{count} sedang berlangsung",
   "downloads.summary.paused": "{count} dijeda",
-  "downloads.switchedSource": "{failed} tidak bekerja, jadi Overdrive beralih ke {next}.",
   "downloads.timeLeft": "{time} tersisa",
   "downloads.title": "Unduhan",
   "downloads.unavailable": "Unduhan tidak tersedia",

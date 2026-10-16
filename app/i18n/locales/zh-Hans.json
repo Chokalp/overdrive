@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} 个失败",
   "downloads.summary.inProgress": "{count} 个进行中",
   "downloads.summary.paused": "{count} 个已暂停",
-  "downloads.switchedSource": "{failed} 无法使用，Overdrive 已切换到 {next}。",
   "downloads.timeLeft": "剩余 {time}",
   "downloads.title": "下载",
   "downloads.unavailable": "下载功能不可用",

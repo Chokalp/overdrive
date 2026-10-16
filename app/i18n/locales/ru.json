@@ -142,7 +142,6 @@
   "downloads.summary.failed": "{count} не удалось",
   "downloads.summary.inProgress": "{count} в процессе",
   "downloads.summary.paused": "{count} на паузе",
-  "downloads.switchedSource": "{failed} не сработал, поэтому Overdrive переключился на {next}.",
   "downloads.timeLeft": "{time} осталось",
   "downloads.title": "Загрузки",
   "downloads.unavailable": "Загрузки недоступны",
