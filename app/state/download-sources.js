@@ -13,7 +13,8 @@
     mediafire: ["mediafire.com"],
     buzzheavier: ["buzzheavier.com"],
     vikingfile: ["vikingfile.com", "vik1ngfile.site"],
-    datanodes: ["datanodes.to"]
+    datanodes: ["datanodes.to"],
+    filekeeper: ["filekeeper.net"]
   };
   var isHost = (host2, domain) => host2 === domain || host2.endsWith(`.${domain}`);
   // Archive.org answers 401 for a restricted item and 403 for one taken down. Neither is a
@@ -65,6 +66,15 @@
     }
   };
   var htmlResponse = (response) => /(?:text\/html|application\/xhtml)/i.test(response.headers?.["content-type"] || "");
+  // A wait the queue's cancel ends early: FileKeeper's countdown.
+  var pause = (ms, signal) => new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+  var FILEKEEPER_COUNTDOWN_MS = 5e3;
   function createSourceResolver({ http }) {
     async function request(url, options = {}) {
       webURL(url);
@@ -81,6 +91,34 @@
       if (response.status >= 300) throw new BrowserRequired(url, "The final file redirects with custom headers. Choose another source.");
       return { url: webURL(response.url || url).url, headers, rejectHtml: true };
     }
+    // FileKeeper's page has no human check: /<id> redirects to /download with the file in a
+    // file_code cookie, a five-second countdown runs, then its Free Download button posts
+    // op=download2 with the countdown element's fields, and the answer redirects to the file on
+    // Datanodes' dlproxy.uk gateway. The app carries the cookie itself (a redirect it follows would
+    // drop it, and /download without it is a 404), waits the countdown out and posts the same form.
+    async function fileKeeper(url, signal) {
+      const first = await request(url, { signal, followRedirects: false });
+      const code = /file_code=([a-z0-9]{12})/i.exec(first.headers?.["set-cookie"] || "")?.[1];
+      const cookie = code ? { Cookie: `file_code=${code}` } : {};
+      const page = first.status >= 300 && first.headers?.location ? absolute(first.headers.location, url) : url;
+      const response = page === url ? first : await request(page, { signal, headers: cookie });
+      const countdown = ((await response.text()).match(/<[a-z]+\b[^>]*\bid=["']download-countdown["'][^>]*>/i) || [])[0];
+      const field = (name) => (countdown && attribute(countdown, `data-${name}`)) ?? "";
+      if (!countdown || !/^[a-z0-9]{12}$/i.test(field("code")) || field("has-captcha") === "true" || field("has-password") === "true")
+        throw new BrowserRequired(url);
+      await pause(FILEKEEPER_COUNTDOWN_MS, signal);
+      if (signal?.aborted) throw new Error("Cancelled.");
+      const form = { op: "download2", id: field("code"), rand: field("rand"), referer: field("referer"), method_free: field("method"), down_direct: "1" };
+      const next = await request(page, {
+        signal,
+        method: "POST",
+        followRedirects: false,
+        headers: { ...cookie, "Content-Type": "application/x-www-form-urlencoded", Referer: page },
+        body: Object.entries(form).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&")
+      });
+      if (!next.headers?.location) throw new BrowserRequired(url);
+      return direct(absolute(next.headers.location, page), signal);
+    }
     async function resolve2(release, { signal, directURL } = {}) {
       if (directURL) return direct(directURL, signal);
       const url = release.browserUrl || release.url;
@@ -89,6 +127,7 @@
       if (kind === "direct") return { url: webURL(url).url, rejectHtml: true };
       if (kind === "manifest") throw new Error("Split manifests must be resolved by the queue.");
       if (kind === "browser" || kind === "datanodes") throw new BrowserRequired(url);
+      if (kind === "filekeeper") return fileKeeper(url, signal);
       const response = await request(url, { signal });
       const base = response.url || url;
       if (response.headers?.["content-disposition"]?.includes("attachment")) return direct(base, signal);

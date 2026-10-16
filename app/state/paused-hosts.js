@@ -8,8 +8,9 @@ import { sourceKind, webURL } from './download-sources.js';
 import { vikingLinkPage } from './viking-capture.js';
 
   var PAUSE_BROWSER_HOSTS = true;
-  // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper).
-  var TESTING = ["datanodes.to", "datanodes.co", "filekeeper.net"];
+  // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper;
+  // FileKeeper's own pages need no browser since, download-sources.js resolves them).
+  var TESTING = ["datanodes.to", "datanodes.co"];
   // The same hosts behind a LinkVault vault, named by the mirror the link picks (#DataNodes), or by
   // the label's suffix when the link names none ("Fpkg - DataNodes"; FileKeeper's reads "Filek").
   var TESTING_MIRRORS = ["DataNodes", "FileKeeper", "Filek"];
