@@ -1,7 +1,8 @@
 // Browser hosts are paused, except Vikingfile, while each one is tested on the console on its own
 // (2026-10-16): a source that needs the console's browser is left out of every game when the
-// game's sources load, and its host out of Browse's host filter. Nothing is removed from the
-// catalog data; false brings every one of them back. Archive.org stays, its /details/ pages too.
+// game's sources load, its host out of Browse's host filter, and a game left with no other host
+// out of the catalog (state/catalog.js). Nothing is removed from the catalog data; false brings
+// every one of them back. Archive.org stays, its /details/ pages too.
 
 import { sourceKind } from './download-sources.js';
 import { vikingLinkPage } from './viking-capture.js';

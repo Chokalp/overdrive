@@ -49,6 +49,12 @@ import { FileSystem, Image } from '@ps5-react/core';
       return this.id;
     }
   };
+  // A game whose every host is paused (paused-hosts.js) leaves the shared lists in place, so no screen
+  // shows a game with nothing to download. The lists are the data module's own arrays, which every
+  // screen reads after this module has run.
+  for (const list of [games, twins])
+    for (let index = list.length - 1; index >= 0; index--)
+      if (list[index].providers?.length && list[index].providers.every(pausedFilter)) list.splice(index, 1);
   var entries = [...games, ...twins];
   var _a;
   for (const game of entries) {
