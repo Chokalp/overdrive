@@ -368,15 +368,10 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         unsubscribe?.();
         if (job2.state === "pausing") job2.state = "paused";
         if (COMPLETE.includes(job2.state)) delete job2.launches;
-        if (job2.cancelling) {
-          try {
-            await forget(job2);
-          } catch (error2) {
-            delete job2.cancelling;
-            job2.error = error2.message;
-          }
-        }
         active2 = null;
+        // A cancelled download's files are deleted after the queue moves on: deleting tens of GB from a
+        // USB drive can take long, and the next download sat "queued" at 0 MB the whole time.
+        if (job2.cancelling) void forgetCancelled(job2);
         try {
           change();
         } catch (error2) {
@@ -914,6 +909,24 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         return false;
       }
     };
+    async function forgetCancelled(job2) {
+      const started = Date.now();
+      console.log(`[download-queue] ${job2.id} cancelled; deleting its files`);
+      try {
+        await forget(job2);
+        console.log(`[download-queue] ${job2.id} files deleted in ${Math.round((Date.now() - started) / 1e3)} s`);
+      } catch (error2) {
+        delete job2.cancelling;
+        job2.error = error2.message;
+        console.log(`[download-queue] ${job2.id} files not deleted:`, error2.message);
+      }
+      try {
+        change();
+      } catch {
+        emit2();
+      }
+      pump();
+    }
     async function forget(job2) {
       if ((job2.rootIdentity || job2.written) && !job2.adopted && onOriginalStorage(job2)) {
         const paths = job2.release.parts ? setFiles(job2) : partialFiles(job2);
@@ -1371,6 +1384,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           jobs.pop();
           throw error2;
         }
+        if (active2 || captures.size) console.log(`[download-queue] ${id} queued behind ${active2 ? `${active2.job.id} (${active2.job.state})` : "an open browser capture"}`);
         pump();
         return id;
       },
