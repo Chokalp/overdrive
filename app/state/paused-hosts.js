@@ -8,12 +8,13 @@ import { sourceKind, webURL } from './download-sources.js';
 import { vikingLinkPage } from './viking-capture.js';
 
   var PAUSE_BROWSER_HOSTS = true;
-  // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper;
-  // FileKeeper's own pages need no browser since, download-sources.js resolves them).
-  var TESTING = ["datanodes.to", "datanodes.co"];
+  // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper,
+  // then DataVaults and Buzzheavier). FileKeeper's own pages need no browser since:
+  // download-sources.js resolves them.
+  var TESTING = ["datanodes.to", "datanodes.co", "datavaults.co", "buzzheavier.com"];
   // The same hosts behind a LinkVault vault, named by the mirror the link picks (#DataNodes), or by
   // the label's suffix when the link names none ("Fpkg - DataNodes"; FileKeeper's reads "Filek").
-  var TESTING_MIRRORS = ["DataNodes", "FileKeeper", "Filek"];
+  var TESTING_MIRRORS = ["DataNodes", "FileKeeper", "Filek", "DataVaults"];
   function testing(release) {
     try {
       const url = release.browserUrl || release.url;
@@ -26,7 +27,7 @@ import { vikingLinkPage } from './viking-capture.js';
   }
   // The catalog's own host keys (game.providers) whose every source needs the browser.
   var PAUSED_FILTERS = /* @__PURE__ */ new Set([
-    "1fichier", "datavaults", "buzzheavier", "gofile", "rapidgator", "filecrypt",
+    "1fichier", "gofile", "rapidgator", "filecrypt",
     "ranoz", "transfer", "mega", "urlvanish", "fileditchfiles", "tinyurl", "fuckingfast", "akirabox", "rootz.so",
     "1024terabox"
   ]);
