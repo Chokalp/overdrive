@@ -10,9 +10,14 @@ import { vikingLinkPage } from './viking-capture.js';
   var PAUSE_BROWSER_HOSTS = true;
   // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper).
   var TESTING = ["datanodes.to", "datanodes.co", "filekeeper.net"];
+  // The same hosts behind a LinkVault vault, named by the mirror the link picks (#DataNodes), or by
+  // the label's suffix when the link names none ("Fpkg - DataNodes"; FileKeeper's reads "Filek").
+  var TESTING_MIRRORS = ["DataNodes", "FileKeeper", "Filek"];
   function testing(release) {
     try {
-      const host = webURL(release.browserUrl || release.url).host.replace(/^www\./, "");
+      const url = release.browserUrl || release.url;
+      const host = webURL(url).host.replace(/^www\./, "");
+      if (host === "link-vault.org") return TESTING_MIRRORS.includes(url.split("#")[1] || (release.label || "").split(" - ").pop());
       return TESTING.some((domain) => host === domain || host.endsWith(`.${domain}`));
     } catch {
       return false;
