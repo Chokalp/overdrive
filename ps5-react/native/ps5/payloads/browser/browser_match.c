@@ -91,7 +91,10 @@ static bool scan_prefix(BrowserMatch *match, const unsigned char *bytes, size_t 
                                            : match->page ? (browser_capture_page_url(candidate) ? BROWSER_CAPTURE_UNBOUND : 0)
                                            : !browser_capture_url(match->filename, candidate) ? 0
                                            : *match->filename ? BROWSER_CAPTURE_BOUND : BROWSER_CAPTURE_UNBOUND;
-                    const bool unbound = hit == BROWSER_CAPTURE_UNBOUND;
+                    /* Anchor mode remembers every old link, its title id or not: another source's file
+                     * for this game (an earlier Vikingfile download) is not the chosen host's. Only
+                     * Vikingfile's exact filename stays acceptable however old: it is the chosen file. */
+                    const bool unbound = hit == BROWSER_CAPTURE_UNBOUND || anchor;
                     if (hit) {
                         const uint64_t print = unbound ? fingerprint(candidate) : 0;
                         if (match->baseline) {
