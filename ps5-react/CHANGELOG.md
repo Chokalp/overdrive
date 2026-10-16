@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — a vault's Vikingfile page, and a PKG's own title id
+
+- Page mode: `prefix: 'https://vikingfile.com/f/'` with the suffix `/` returns the Vikingfile file
+  page, `/f/<10-character id>`, that a LinkVault vault opens. The app reads that page's public
+  metadata and captures the file it names next, so a vault's Vikingfile download is bound to its
+  exact filename and size, as a direct Vikingfile source's is.
+- `Archives.inspect` also returns `title`: for a PKG, the title id its content id names (the
+  header's `UP0001-CUSA01234_00-...` at 0x40), so the app can tell another game's file early.
+
 ## Unreleased — only links that appear after the capture starts
 
 - The browser's network process keeps the addresses of files it fetched earlier in memory it never

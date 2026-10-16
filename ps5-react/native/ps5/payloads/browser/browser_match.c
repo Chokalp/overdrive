@@ -67,6 +67,7 @@ static bool rejected(const BrowserMatch *match, const char *candidate) {
 /* Reads one candidate URL after `prefix` and hands it to the mode's validator. */
 static bool scan_prefix(BrowserMatch *match, const unsigned char *bytes, size_t length,
                         const char *prefix, bool anchor) {
+    /* A page names no file, so it is unbound: an old one from an earlier vault is passed over. */
     const size_t plen = strlen(prefix);
     for (size_t step = 1; step <= 2; step++) {
         for (size_t i = 0; (plen + 1) * step <= length && i <= length - (plen + 1) * step; i++) {
@@ -87,6 +88,7 @@ static bool scan_prefix(BrowserMatch *match, const unsigned char *bytes, size_t 
                 if (boundary(c)) {
                     candidate[j] = 0;
                     const int hit = anchor ? browser_capture_anchor_url(match->filename, candidate)
+                                           : match->page ? (browser_capture_page_url(candidate) ? BROWSER_CAPTURE_UNBOUND : 0)
                                            : !browser_capture_url(match->filename, candidate) ? 0
                                            : *match->filename ? BROWSER_CAPTURE_BOUND : BROWSER_CAPTURE_UNBOUND;
                     const bool unbound = hit == BROWSER_CAPTURE_UNBOUND;
@@ -115,7 +117,8 @@ bool browser_match(void *context, const unsigned char *bytes, size_t length) {
     BrowserMatch *match = context;
     if (match->anchor) return match->prefix && scan_prefix(match, bytes, length, match->prefix, true);
     /* Vikingfile's two routes are both scanned: a link page may hand out either one. */
+    const char *const *prefixes = match->page ? browser_capture_page_prefixes : browser_capture_prefixes;
     for (size_t which = 0; which < 2; which++)
-        if (scan_prefix(match, bytes, length, browser_capture_prefixes[which], false)) return true;
+        if (scan_prefix(match, bytes, length, prefixes[which], false)) return true;
     return false;
 }

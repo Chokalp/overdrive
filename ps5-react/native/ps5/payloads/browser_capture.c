@@ -89,15 +89,16 @@ int main(void) {
   /* A whole-scheme prefix asks for anchor mode: any file link that carries the anchor (the game's
    * title id), or any file link on a known file host, wherever the page leads. */
   const bool anchor = !strcmp(prefix, "https://");
-  if (!anchor && strcmp(prefix, "https://vikingfile.com/d/")) return fail("Invalid capture request.");
+  const bool page = !strcmp(prefix, "https://vikingfile.com/f/");
+  if (!anchor && !page && strcmp(prefix, "https://vikingfile.com/d/")) return fail("Invalid capture request.");
   const char *filename = suffix + 1;
-  if ((anchor && !*filename) || strchr(filename, '/') || strchr(filename, '\\') ||
+  if ((anchor && !*filename) || (page && *filename) || strchr(filename, '/') || strchr(filename, '\\') ||
       strstr(filename, "..")) return fail("Invalid filename.");
   char *end;
   const long timeout = strtol(seconds, &end, 10);
   if (*end || timeout < 1 || timeout > 300 || !now()) return fail("Invalid deadline.");
   ProbeTarget target = {.cancel = &cancelled, .deadline = now() + timeout};
-  BrowserMatch match = {.prefix = prefix, .filename = filename, .anchor = anchor, .rejected_count = refused,
+  BrowserMatch match = {.prefix = prefix, .filename = filename, .anchor = anchor, .page = page, .rejected_count = refused,
     .stale = stale, .stale_count = known};
   for (size_t i = 0; i < refused; i++) match.rejected[i] = rejected[i];
   ProbeReader reader = {.context = &target, .read = probe_target_read, .active = active,

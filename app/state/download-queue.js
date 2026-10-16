@@ -14,7 +14,7 @@ import { PKG_FIRMWARE_ERROR, fakePackagesInstall, isPs5Title } from './firmware.
 import { readJSON } from './read-json.js';
 import { mountedImages, shadowRequest, within2 } from './shadowmount.js';
 import { MARGIN2, spaceShortfall, stillNeeded } from './space.js';
-import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetadata, validateVikingCapture, vikingLinkPage } from './viking-capture.js';
+import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetadata, requirePart, validateVikingCapture, vikingLinkPage } from './viking-capture.js';
 
   var ACTIVE = ["resolving", "connecting", "downloading", "verifying", "extracting", "installing", "pausing"];
   var BUSY = ["queued", ...ACTIVE];
@@ -401,10 +401,11 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       if (job2.inspected || tries >= 3 || !archives?.inspect || !fs.exists(path)) return;
       inspections.set(job2, tries + 1);
       const started = Date.now();
-      const { kind, refusal } = archives.inspect([path]);
+      const { kind, refusal, title } = archives.inspect([path]);
       if (Date.now() - started > 250) console.log(`[download-queue] header check took ${Date.now() - started} ms`);
       if (!kind) return;
       job2.inspected = kind;
+      noteTitle(job2, title);
       if (refusal) {
         job2.error = refusal;
         task.cancel();
@@ -412,8 +413,9 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
     }
     function route(job2) {
       if (!archives?.inspect) return;
-      const { kind, refusal } = archives.inspect([job2.downloadDestination]);
+      const { kind, refusal, title } = archives.inspect([job2.downloadDestination]);
       if (refusal) throw new Error(refusal);
+      noteTitle(job2, title);
       // A source listed without a format is kept only for what its headers turn out to be: when they
       // are none Overdrive knows, the host sent something else, usually a web page. Leaving it as a
       // downloaded ".binary" (issue #8) told the user nothing. Only a small file reads as one, though:
@@ -620,6 +622,7 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           job2.state = "installer-required";
           job2.message = t("downloads.packagesExtracted", { path: job2.output });
         } else if (folder) {
+          noteTitle(job2, titleIn(folder));
           const destination = `${job2.root}/homebrew/${job2.release.filename.replace(/[^a-z0-9_.-]/gi, "_")}-app`;
           fs.mkdir(`${job2.root}/homebrew`, { recursive: true });
           if (fs.exists(destination)) throw new Error("Extracted destination already exists; preserve it and inspect before retrying.");
@@ -907,19 +910,30 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
         const game = await info(title);
         if (within2(game?.path, paths, job2.root)) {
           job2.consoleTitleId = title;
+          noteTitle(job2, title);
           return game;
         }
       }
       return !fs.exists(job2.artifact.destination) && listed2?.managed ? listed2 : null;
     }
+    function titleIn(folder) {
+      try {
+        return JSON.parse(fs.readFile(`${folder}/sce_sys/param.json`)).titleId || null;
+      } catch {
+        return null;
+      }
+    }
+    // The title id the files themselves carry (a PKG's header, an extracted or mounted game's
+    // param.json) against the game the player chose. A link can bring another game's file past
+    // every check before it downloads; this is the one that reads the game itself. Another region
+    // of the same game has its own id too, so a difference is shown on the row, never acted on.
+    function noteTitle(job2, title) {
+      if (!title || !job2.titleId || job2.titleMismatch || String(title).toUpperCase() === String(job2.titleId).toUpperCase()) return;
+      job2.titleMismatch = String(title).toUpperCase();
+      console.log(`[download-queue] ${job2.id}: the files are ${job2.titleMismatch}, the game chosen is ${job2.titleId}`);
+      change();
+    }
     function mountedTitle(image) {
-      const titleIn = (folder) => {
-        try {
-          return JSON.parse(fs.readFile(`${folder}/sce_sys/param.json`)).titleId || null;
-        } catch {
-          return null;
-        }
-      };
       let folders = [];
       try {
         folders = fs.readDir(image.mount_point).filter((entry2) => entry2.isDirectory).map((entry2) => `${image.mount_point}/${entry2.name}`);
@@ -1099,23 +1113,43 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
       let handingOff = false;
       try {
         const linkPage = vikingLinkPage(source2);
-        console.log(linkPage ? "[browser-capture] link page; any Vikingfile file" : "[browser-capture] reading public file metadata");
-        const metadata = linkPage ? linkPageMetadata(source2) : await describeVikingCapture(http, source2, session.cancel.signal);
-        if (!current()) return;
         console.log("[browser-capture] source:", sourceForLog(source2, job2.browserUrl));
-        session.task = browserCapture.capture({ prefix: VIKING_PREFIX, suffix: `/${metadata.filename}`, timeoutSeconds: 180 });
+        const deadline = Date.now() + (linkPage ? LINK_CAPTURE_SECONDS : 180) * 1e3;
+        let metadata = null;
+        if (linkPage) {
+          // A vault hides which Vikingfile page it opens, so the capture first takes that page; its
+          // public metadata then names the file exactly, as a direct Vikingfile source's does.
+          session.task = browserCapture.capture({ prefix: VIKING_PAGE_PREFIX, suffix: "/", timeoutSeconds: LINK_CAPTURE_SECONDS });
+        } else {
+          console.log("[browser-capture] reading public file metadata");
+          metadata = await describeVikingCapture(http, source2, session.cancel.signal);
+          if (!current()) return;
+          session.task = browserCapture.capture({ prefix: VIKING_PREFIX, suffix: `/${metadata.filename}`, timeoutSeconds: 180 });
+        }
         await armedCapture(session.task);
         if (!current()) return;
         job2.captureState = "capturing";
         change();
         console.log("[browser-capture] capture armed; opening browser");
         if (!linking?.openURL(webURL(job2.browserUrl).url)) throw new Error("The browser could not open. Retry or enter the final file link.");
+        if (linkPage) {
+          const page = await session.task.done;
+          if (!current()) return;
+          console.log("[browser-capture] the vault opened", page.url, "- reading its public file metadata");
+          metadata = await describeVikingCapture(http, { ...source2, url: page.url, browserUrl: page.url }, session.cancel.signal);
+          if (!current()) return;
+          requirePart(linkPageMetadata(source2).part, metadata.filename);
+          const seconds = Math.floor((deadline - Date.now()) / 1e3);
+          if (seconds < 5) throw new Error("The verification ran out of time. Reopen the page and retry.");
+          console.log("[browser-capture] Vikingfile names", metadata.filename, "- capturing that file");
+          session.task = browserCapture.capture({ prefix: VIKING_PREFIX, suffix: `/${metadata.filename}`, timeoutSeconds: seconds, resume: true });
+        }
         const result = await session.task.done;
         if (!current()) return;
         job2.captureState = "validating";
         change();
         console.log("[browser-capture] link captured:", linkForLog(result.url), "- validating one-byte range");
-        const validated = await validateVikingCapture(http, result.url, linkPage ? capturedVikingFile(result.url, metadata) : metadata, session.cancel.signal);
+        const validated = await validateVikingCapture(http, result.url, metadata, session.cancel.signal);
         if (!current()) return;
         source2.sizeBytes = validated.expectedBytes;
         if (!job2.parts) job2.total = validated.expectedBytes;
@@ -1388,7 +1422,8 @@ import { VIKING_PREFIX, capturedVikingFile, describeVikingCapture, linkPageMetad
           captures.set(id, session);
           job2.captureState = "preparing";
           delete job2.captureError;
-          if (viking) delete job2.captureMode;
+          // A vault's Vikingfile capture takes the vault's longer window, and says so.
+          if (viking && !vikingLinkPage(source2)) delete job2.captureMode;
           else job2.captureMode = "link";
           change();
           if (viking) void captureBrowser(job2, source2, session);

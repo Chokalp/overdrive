@@ -587,7 +587,8 @@ register games. Desktop extraction and successful PS5 linking are not console
 execution evidence.
 
 `Archives.inspect(sources)` reads headers synchronously and returns
-`{kind, refusal}`. `kind` names the leading bytes: `rar`, `7z`, `zip`, `tar`,
+`{kind, refusal, title}`. For a `pkg`, `title` is the title id its content id
+names (the header's `UP0001-CUSA01234_00-...` at 0x40), or `''`. `kind` names the leading bytes: `rar`, `7z`, `zip`, `tar`,
 `tar.gz`, `tar.bz2`, `tar.xz`, `tar.zst`, `pkg` (`\x7FCNT`), `exfat`, `ffpkg` (a
 UFS2 superblock), `ffpfs`, `ffpfsc`, or `''`. For an archive, `refusal` is the
 decoder-memory message above when the headers read so far already declare a
@@ -644,6 +645,10 @@ to the game (the title id, or Vikingfile's expected filename) is accepted howeve
 old. `resume: true` restarts after a refused link with the last fresh capture's
 fingerprints instead of a new pass, which would count the links that appeared
 since as already known.
+The page prefix, `https://vikingfile.com/f/` with the suffix `/`, returns the
+Vikingfile file page (`/f/<10-character id>`, or its `vik1ngfile.site` alias) a
+LinkVault vault opens; the app reads that page's public metadata and captures
+the named file next, with `resume: true`.
 Anchor mode also accepts the generated routes with no file name of their own,
 1fichier's `a-<n>.1fichier.com/<token>` and Datanodes' `tunnel<n>.dlproxy.uk`
 gateway, and never a host's own page: LinkVault, MediaFire's `www` page, an

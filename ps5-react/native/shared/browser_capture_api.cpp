@@ -43,15 +43,17 @@ JSValue capture(JSContext* ctx, JSValueConst, int argc, JSValueConst* argv) {
   std::string prefix, suffix;
   double timeout = 0;
   if (argc < 3 || !text(ctx, argv[0], prefix) ||
-      (prefix != "https://vikingfile.com/d/" && prefix != "https://") ||
+      (prefix != "https://vikingfile.com/d/" && prefix != "https://" && prefix != "https://vikingfile.com/f/") ||
       !text(ctx, argv[1], suffix) || suffix.empty() || suffix[0] != '/' ||
       suffix.find('/', 1) != std::string::npos || suffix.find('\\') != std::string::npos ||
       suffix.find("..") != std::string::npos ||
       /* The whole scheme means anchor mode, which needs a real anchor. */
       (prefix == "https://" && suffix.size() < 5) ||
+      /* A Vikingfile page names no file: the vault decides which one it opens. */
+      (prefix == "https://vikingfile.com/f/" && suffix != "/") ||
       JS_ToFloat64(ctx, &timeout, argv[2]) ||
       !std::isfinite(timeout) || timeout < 1 || timeout > 300 || std::floor(timeout) != timeout)
-    return JS_ThrowTypeError(ctx, "browser.capture: expected the Vikingfile prefix, or https:// with an anchor of 4..160 bytes, then /filename (160 UTF-8 bytes) and 1..300 seconds");
+    return JS_ThrowTypeError(ctx, "browser.capture: expected the Vikingfile prefix, its page prefix with /, or https:// with an anchor of 4..160 bytes, then /filename (160 UTF-8 bytes) and 1..300 seconds");
   for (const unsigned char c : suffix) if (c < 32 || c == 127)
     return JS_ThrowTypeError(ctx, "browser.capture: filename contains a control character");
   std::vector<std::string> rejected;

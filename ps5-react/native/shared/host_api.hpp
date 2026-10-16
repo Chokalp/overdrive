@@ -64,7 +64,7 @@
 //   network.setRateLimit(bytes)    ABI v17; bytes per second all file downloads share, 0 for no limit;
 //                                  applies at once, running downloads included, except unlimited ones
 //   archives.extract(sources, destination, maxBytes) task ID; bounded native archive worker
-//   archives.inspect(sources)      {kind, refusal}; file type from leading bytes and, for an archive,
+//   archives.inspect(sources)      {kind, refusal, title}; file type from leading bytes and, for an archive,
 //                                  a decoder-memory refusal its headers so far justify; partial files ok
 //   archives.cancel(id)            requests cancellation; source volumes remain intact
 //   archives.poll()                state/error/written/entries/artifacts; consumes terminal results

@@ -11,6 +11,7 @@ typedef struct {
   const char *prefix;   /* The one prefix to scan for; the request's, in anchor mode. */
   const char *filename; /* The expected filename, or the anchor that stands for it. */
   bool anchor;          /* Anchor mode: any file link carrying the anchor, or on a known host. */
+  bool page;            /* Page mode: a Vikingfile file page, /f/<id>, as a LinkVault vault opens it. */
   /* Links the app already probed and refused this session; the scan passes over them. */
   const char *rejected[BROWSER_CAPTURE_REJECTED_MAX];
   size_t rejected_count;
@@ -26,6 +27,8 @@ typedef struct {
   char url[544];
 } BrowserMatch;
 extern const char *const browser_capture_prefixes[2];
+extern const char *const browser_capture_page_prefixes[2];
+bool browser_capture_page_url(const char *url);
 const char *browser_capture_prefix(const char *url);
 bool browser_capture_url(const char *filename, const char *url);
 /* 0: not the file; BOUND: its name carries the anchor; UNBOUND: a file link that names no game

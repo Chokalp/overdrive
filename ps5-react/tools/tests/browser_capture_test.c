@@ -179,6 +179,23 @@ int main(void) {
   memset(match.url, 0, sizeof match.url);
   assert(browser_match(&match, (const unsigned char *)bound, strlen(bound)));
   match.stale = NULL; match.stale_count = 0;
+  // Page mode: the Vikingfile file page a LinkVault vault opens, and nothing else.
+  assert(browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki"));
+  assert(browser_capture_page_url("https://vik1ngfile.site/f/jjeEUkyPki"));
+  assert(!browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPk"));
+  assert(!browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki/x"));
+  assert(!browser_capture_page_url("https://vikingfile.com/f/jjeEUkyPki?ref=1"));
+  assert(!browser_capture_page_url("https://vikingfile.com/d/jjeEUkyPki/a.rar"));
+  assert(!browser_capture_page_url("https://vikingfile.com.evil.test/f/jjeEUkyPki"));
+  BrowserMatch pages = {.prefix = "https://vikingfile.com/f/", .filename = "", .page = true, .stale = stale};
+  const char *vault = "\"https://vikingfile.com/f/OldOld0000\" <a href=\"https:\\/\\/vikingfile.com\\/f\\/jjeEUkyPki\">";
+  pages.baseline = true;
+  const char *before = "\"https://vikingfile.com/f/OldOld0000\"";
+  assert(!browser_match(&pages, (const unsigned char *)before, strlen(before)));
+  assert(pages.stale_count == 1);
+  pages.baseline = false;
+  assert(browser_match(&pages, (const unsigned char *)vault, strlen(vault)));
+  assert(!strcmp(pages.url, "https://vikingfile.com/f/jjeEUkyPki"));
   // A query whose "&" the page escaped as JSON still yields the address the browser will request.
   const char *escaped = "fetch(\"https://cdn9.example.ru/9f3/PPSA01285.exfat?token=8f2a\\u0026expires=99\");";
   memset(match.url, 0, sizeof match.url);

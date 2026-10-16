@@ -122,6 +122,7 @@
   "downloads.extractedTo": "Estratto in {path}",
   "downloads.installFailed": "La console ha rifiutato il pacchetto. Premi Installa per riprovare.",
   "downloads.installHint": "Chiudi Overdrive per completare: ShadowMount installa quando nessun gioco è aperto.",
+  "downloads.titleMismatch": "I file sono {found}, il gioco è {expected}: un altro gioco o un'altra regione?",
   "downloads.installRequested": "Installazione richiesta. Chiudi Overdrive per completare: ShadowMount installa quando nessun gioco è aperto.",
   "downloads.installed": "Installato. Lo trovi nella schermata Home.",
   "downloads.notice.captured": "Link acquisito, torna su Overdrive",

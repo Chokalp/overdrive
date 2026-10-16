@@ -16,6 +16,22 @@ const char *browser_capture_prefix(const char *url) {
     if (!strncmp(url, browser_capture_prefixes[i], strlen(browser_capture_prefixes[i]))) return browser_capture_prefixes[i];
   return NULL;
 }
+// A LinkVault vault hides which Vikingfile page it leads to, so its capture first takes the page the
+// vault opens, /f/<10-character id>, whose public metadata then names the file exactly.
+static bool page_id_char(char c) {
+  return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+const char *const browser_capture_page_prefixes[] = {"https://vikingfile.com/f/", "https://vik1ngfile.site/f/"};
+bool browser_capture_page_url(const char *url) {
+  for (size_t i = 0; i < sizeof browser_capture_page_prefixes / sizeof *browser_capture_page_prefixes; i++) {
+    const size_t length = strlen(browser_capture_page_prefixes[i]);
+    if (strncmp(url, browser_capture_page_prefixes[i], length)) continue;
+    size_t id = 0;
+    while (page_id_char(url[length + id])) id++;
+    return id == 10 && !url[length + id];
+  }
+  return false;
+}
 // Hosts whose check only a console browser can pass: Akirabox's Turnstile, Datanodes' and
 // Filekeeper's Cloudflare pass, LinkVault's mirror pages. Their file link becomes a real address
 // only after the human acts, so it is taken from the browser once the file starts. LinkVault
