@@ -1,12 +1,5 @@
 # Changelog
 
-## Unreleased — anchor mode remembers old links that name the game too
-
-- Anchor mode's first pass fingerprints every link already in memory, those that carry the title id
-  included: a capture for a DataVaults source took an earlier Vikingfile download's file for the same
-  game each time. Only Vikingfile's exact-filename mode still accepts an old link, which is the chosen
-  file itself.
-
 ## Unreleased — links up to 2047 bytes
 
 - A captured link may be up to 2047 bytes (was 543, Orbit Store's limit): FileKeeper hands its file

@@ -9,7 +9,7 @@ import { INCOMPLETE_PART, STALE_PARTIAL, cause } from '../downloads/errors.js';
 import { t } from '../i18n/core.js';
 import { archivePassword } from './archive-password.js';
 import { BrowserRequired, archiveRefusal, cancellation, createSourceResolver, sourceKind, webURL } from './download-sources.js';
-import { LINK_PREFIX, captureAnchor, linkForLog, validateCapturedLink } from './browser-links.js';
+import { LINK_PREFIX, captureAnchor, linkForLog, otherSourceLink, validateCapturedLink } from './browser-links.js';
 import { PKG_FIRMWARE_ERROR, fakePackagesInstall, isPs5Title } from './firmware.js';
 import { readJSON } from './read-json.js';
 import { mountedImages, shadowRequest, within2 } from './shadowmount.js';
@@ -1263,6 +1263,12 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           if (!current()) return;
           job2.captureState = "validating";
           change();
+          if (otherSourceLink(result.url, source2)) {
+            if (rejected.length >= 6) throw new Error("Captured link belongs to another source. Reopen the page and retry.");
+            console.log("[browser-capture] passed over", linkForLog(result.url), "- another source's link, scanning on");
+            rejected.push(result.url);
+            continue;
+          }
           console.log("[browser-capture] link captured:", linkForLog(result.url), "- validating one-byte range");
           let found;
           try {

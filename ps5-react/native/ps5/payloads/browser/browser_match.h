@@ -17,10 +17,10 @@ typedef struct {
   const char *rejected[BROWSER_CAPTURE_REJECTED_MAX];
   size_t rejected_count;
   /* The browser keeps the addresses of files it saw earlier in memory it never clears, so the
-   * first pass, before the page opens, fingerprints the matches already there (`baseline`), and
-   * the scans after it take such a link only when it is new: in anchor mode every one, its title
-   * id or not (another source's file for the same game is not the chosen host's); in Vikingfile's
-   * modes the unbound ones, as Vikingfile's expected filename is the chosen file however old. */
+   * first pass, before the page opens, only fingerprints every unbound match already there
+   * (`baseline`); the scans after it take an unbound link only when it is new. A link bound to the
+   * game (its title id, or Vikingfile's expected filename) stays acceptable however old: it is
+   * this game's file, and an expired one fails the app's probe. */
   bool baseline;
   uint64_t *stale;
   size_t stale_count;

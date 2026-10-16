@@ -170,25 +170,15 @@ int main(void) {
   memset(match.url, 0, sizeof match.url);
   assert(browser_match(&match, (const unsigned char *)later, strlen(later)));
   assert(!strcmp(match.url, "https://akirabox.com/download/x9/PPSA01285.rar"));
-  // In anchor mode an old link that carries the title id is remembered too: it is another source's
-  // file for this game (an earlier Vikingfile download), not the chosen host's.
-  const char *bound = "\"https://vikingfile.com/d/Ab01234567/PPSA01285.exfat\"";
+  // A link bound to the game is never fingerprinted: an old one is still this game's file.
+  const char *bound = "\"https://cdn9.example.ru/z/PPSA01285.exfat\"";
   match.baseline = true;
   assert(!browser_match(&match, (const unsigned char *)bound, strlen(bound)));
-  assert(match.stale_count == 3);
+  assert(match.stale_count == 2);
   match.baseline = false;
-  assert(!browser_match(&match, (const unsigned char *)bound, strlen(bound)));
+  memset(match.url, 0, sizeof match.url);
+  assert(browser_match(&match, (const unsigned char *)bound, strlen(bound)));
   match.stale = NULL; match.stale_count = 0;
-  // Vikingfile's exact filename is the chosen file however old, so it is never fingerprinted.
-  {
-    uint64_t prints[BROWSER_CAPTURE_STALE_MAX];
-    BrowserMatch exact = {.filename = "PPSA01285.exfat", .stale = prints};
-    exact.baseline = true;
-    assert(!browser_match(&exact, (const unsigned char *)bound, strlen(bound)));
-    assert(exact.stale_count == 0);
-    exact.baseline = false;
-    assert(browser_match(&exact, (const unsigned char *)bound, strlen(bound)));
-  }
   // FileKeeper's file: Datanodes' gateway with a 598-character token, about 675 bytes in all, read
   // whole across a chunk boundary in ASCII and UTF-16.
   {

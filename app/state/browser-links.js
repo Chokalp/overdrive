@@ -39,6 +39,32 @@ import { webURL } from './download-sources.js';
     if (["datanodes.to", "datanodes.co", "filekeeper.net", "datavaults.co"].includes(bare)) return /^\/[a-z0-9]{12}(?:[/?]|$)/.test(path);
     return false;
   }
+  // The hosts the catalog's sources come from, each with its own domains. A link on one of them is
+  // that source's file: on a capture for another source it is an earlier download's link still in
+  // the browser's memory (a Vikingfile link for the same game, taken on a DataVaults capture), never
+  // the chosen host's file. A host's own link is kept however old, so a capture restarted on the same
+  // host takes the link it hands out again. Shared gateways (dlproxy.uk) and unknown CDNs belong to none.
+  var SOURCE_HOSTS = [
+    ["vikingfile.com", "vik1ngfile.site"], ["mediafire.com"], ["archive.org"], ["akirabox.com", "akirabox.to"],
+    ["datanodes.to", "datanodes.co"], ["datavaults.co"], ["filekeeper.net"], ["buzzheavier.com"], ["1fichier.com"],
+    ["fileditchfiles.st", "theditch.st"], ["gofile.io"], ["rootz.so"]
+  ];
+  // A vault's link names its mirror (#DataNodes), or its label does ("Dump - Filek").
+  var VAULT_MIRRORS = { VikingFile: "vikingfile.com", AkiraBox: "akirabox.com", DataNodes: "datanodes.to", DataVaults: "datavaults.co", FileKeeper: "filekeeper.net", Filek: "filekeeper.net", FileDitch: "fileditchfiles.st" };
+  var hostFamily = (host) => SOURCE_HOSTS.find((domains) => domains.some((domain) => host === domain || host.endsWith(`.${domain}`)));
+  function otherSourceLink(url, source) {
+    try {
+      const family = hostFamily(webURL(plainLink(url)).host.toLowerCase());
+      if (!family) return false;
+      const page = source.browserUrl || source.url;
+      let host = webURL(page).host.toLowerCase();
+      if (host === "link-vault.org") host = VAULT_MIRRORS[page.split("#")[1] || (source.label || "").split(" - ").pop()] || "";
+      const chosen = hostFamily(host);
+      return Boolean(chosen) && chosen !== family;
+    } catch {
+      return false;
+    }
+  }
   function matchingLink(url, anchor) {
     try {
       const parsed = webURL(url);
@@ -128,4 +154,4 @@ import { webURL } from './download-sources.js';
     return { url: link, expectedBytes: bytes, filename, unbound: !bound && !metadata.sizeBytes };
   }
 
-export { LINK_PREFIX, captureAnchor, linkForLog, matchingLink, validateCapturedLink };
+export { LINK_PREFIX, captureAnchor, linkForLog, matchingLink, otherSourceLink, validateCapturedLink };
