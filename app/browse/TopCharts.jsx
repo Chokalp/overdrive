@@ -6,7 +6,8 @@ import { Fragment, jsx, jsxs } from 'react/jsx-runtime';
 import { games } from '../data/catalog.js';
 import { prefetchWhenSettled } from '../game/art.js';
 import { latin, useLocale, useT } from '../i18n/index.js';
-import { NO_FILTERS, formatCount, formatDate3, showcase, sortGames, sortLabel } from '../state/catalog.js';
+import { NO_FILTERS, formatCount, formatDate3, sortGames, sortLabel } from '../state/catalog.js';
+import { shuffle } from './picks.js';
 import { useNavActions } from '../state/nav.jsx';
 import { useStoreActions } from '../state/store.jsx';
 import { Cover } from '../ui/Cover.jsx';
@@ -15,7 +16,22 @@ import { SectionHeader } from '../ui/SectionHeader.jsx';
 import { lightGame, unlight } from '../ui/lightBar.js';
 import { Text, View } from '@ps5-react/core';
 
-  var CHARTS = ["relevance", "newest", "rating"].map((id) => ({ id, games: showcase(sortGames(games, id), 5) }));
+  // Each chart ranks the whole catalog, with no preference for Archive.org's games: the most reviewed
+  // and the best rated are five drawn on every launch from the fifteen at the top, then ranked, so
+  // the lists vary but stay the best; only the games that have that number take part. New releases
+  // are the five newest.
+  var TOP = 15;
+  var RANK = {
+    relevance: { has: (game) => game.recommendations > 0, compare: (a, b) => b.recommendations - a.recommendations },
+    rating: { has: (game) => game.metacritic != null, compare: (a, b) => b.metacritic - a.metacritic }
+  };
+  function chartOf(id) {
+    if (!RANK[id]) return sortGames(games, id).slice(0, 5);
+    const { has, compare } = RANK[id];
+    const top = games.filter(has).sort(compare).slice(0, TOP);
+    return shuffle(top).slice(0, 5).sort(compare);
+  }
+  var CHARTS = ["relevance", "newest", "rating"].map((id) => ({ id, games: chartOf(id) }));
   var DETAIL = {
     relevance: (t2, game) => t2("browse.reviews", { count: formatCount(game.recommendations) }),
     newest: (t2, game) => formatDate3(game.releaseDate)
