@@ -168,7 +168,7 @@
       group: ".",
       decimal: ",",
       percent: "{n}%",
-      date: "{d} {m} {y}",
+      date: "{d} {MMM} {y}",
       months: ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"],
       list: [", ", ", en ", " en "]
     },
