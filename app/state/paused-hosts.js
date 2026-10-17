@@ -11,8 +11,9 @@ import { vikingLinkPage } from './viking-capture.js';
   // Taken out of the pause one at a time, as each is tested (2026-10-16: DataNodes and FileKeeper,
   // then Buzzheavier and AkiraBox). FileKeeper's own pages need no browser since: download-sources.js resolves
   // them. DataVaults went back: its file is the answer to the captcha form's own post, with no
-  // link of its own to capture, and its ads keep the console's browser from the captcha.
-  var TESTING = ["datanodes.to", "datanodes.co", "buzzheavier.com", "akirabox.com", "akirabox.to"];
+  // link of its own to capture, and its ads keep the console's browser from the captcha. Buzzheavier
+  // went back too: its capture works, but its ads made it too much on the console (2026-10-17).
+  var TESTING = ["datanodes.to", "datanodes.co", "akirabox.com", "akirabox.to"];
   // The same hosts behind a LinkVault vault, named by the mirror the link picks (#DataNodes), or by
   // the label's suffix when the link names none ("Fpkg - DataNodes"; FileKeeper's reads "Filek").
   var TESTING_MIRRORS = ["DataNodes", "FileKeeper", "Filek", "AkiraBox"];
@@ -28,7 +29,7 @@ import { vikingLinkPage } from './viking-capture.js';
   }
   // The catalog's own host keys (game.providers) whose every source needs the browser.
   var PAUSED_FILTERS = /* @__PURE__ */ new Set([
-    "1fichier", "datavaults", "gofile", "rapidgator", "filecrypt",
+    "1fichier", "datavaults", "buzzheavier", "gofile", "rapidgator", "filecrypt",
     "ranoz", "transfer", "mega", "urlvanish", "fileditchfiles", "tinyurl", "fuckingfast", "rootz.so",
     "1024terabox"
   ]);
