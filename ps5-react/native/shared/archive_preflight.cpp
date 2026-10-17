@@ -724,6 +724,8 @@ Inspection inspect(const std::vector<std::string>& sources) {
     }
     return {"pkg", {}, title};
   }
+  // A PS5 package opens on "\x7F" "FIH" where a PS4 one has "\x7F" "CNT": it installs the same way.
+  if (starts_with(magic, "\x7F" "FIH")) return {"pkg", {}};
   if (starts_with(magic, "PFSC")) return {"ffpfsc", {}};
   if (little_endian(magic.data(), 8) == 1) {
     std::array<unsigned char, 8> pfs{};

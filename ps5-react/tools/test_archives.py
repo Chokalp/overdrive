@@ -500,6 +500,7 @@ def main():
   assert inspect(gz)==["tar.gz",""]
   assert inspect(partial("huge.tar.xz.part",(root/"huge.tar.xz").read_bytes(),4096))==["tar.xz",TOO_BIG]
   assert inspect(partial("game.pkg.part",b"\x7fCNT"+bytes(64),68))==["pkg",""]
+  assert inspect(partial("ps5game.pkg.part",b"\x7fFIH"+bytes(64),68))==["pkg",""]
   assert inspect(partial("game.exfat",b"\xeb\x76\x90EXFAT   "+bytes(500),512))==["exfat",""]
   ufs=bytearray(70000);ufs[65536+1372:65536+1376]=struct.pack("<I",0x19540119)
   assert inspect(partial("game.ffpkg",bytes(ufs),len(ufs)))==["ffpkg",""]
