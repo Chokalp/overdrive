@@ -1,5 +1,5 @@
 name: Game report
-description: A game in the store has a problem, like a download that fails or wrong details.
+description: A game in the store has a problem, like a game that won't install or start, or wrong details. For a download source that doesn't work, use Source report.
 title: "[Game] "
 labels: ["catalog"]
 body:
