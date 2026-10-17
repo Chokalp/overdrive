@@ -194,6 +194,28 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         console.log(`[download-queue] queue not saved to ${file}: ${error2.message}`);
       }
     }
+    // A finished download that stayed a ".binary" before its header check knew PS5 packages and its
+    // name was read (issues #24, #42) is routed now, once at launch, as a new one would be: a game
+    // image to the homebrew folder for ShadowMount+, a PKG to the packages folder to install. One
+    // still unknown, or one an archive after all, is left where it is.
+    for (const job2 of jobs) {
+      if (job2.state !== "file-downloaded" || job2.artifact?.nextAction !== "downloaded" || !/[.](?:binary|bin)$/i.test(job2.downloadDestination || "")) continue;
+      const before = job2.artifact;
+      try {
+        if (!fs.exists(job2.downloadDestination)) continue;
+        route(job2);
+        if (!["shadowmount", "installer-required"].includes(job2.artifact.nextAction)) {
+          job2.artifact = before;
+          continue;
+        }
+        job2.state = job2.artifact.nextAction === "shadowmount" ? "downloaded" : "installer-required";
+        console.log(`[download-queue] ${job2.id}: a finished ".binary" is now ${job2.downloadDestination}`);
+        change();
+      } catch (error2) {
+        if (!job2.routing) job2.artifact = before;
+        console.log(`[download-queue] ${job2.id}: a finished ".binary" stays as it is: ${error2.message}`);
+      }
+    }
     const find = (id) => {
       const job2 = jobs.find((item) => item.id === id);
       if (!job2) throw new Error("Download is no longer in the queue.");
