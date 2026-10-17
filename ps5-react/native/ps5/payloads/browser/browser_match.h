@@ -25,6 +25,9 @@ typedef struct {
   uint64_t *stale;
   size_t stale_count;
   bool stale_full;
+  /* Vikingfile links that spelled the start of the expected filename but then broke off from it:
+   * reported when nothing is found, so a name the scan cannot read shows up in the log. */
+  unsigned near_misses;
   char url[PROBE_MATCH_MAX];
 } BrowserMatch;
 extern const char *const browser_capture_prefixes[2];

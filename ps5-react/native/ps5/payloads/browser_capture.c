@@ -154,6 +154,7 @@ int main(void) {
     if (result != PROBE_ABSENT) break;
     usleep(100000);
   }
+  const unsigned near_misses = match.near_misses;
   memset(&match, 0, sizeof match); memset(rejected, 0, sizeof rejected);
   if (target.identity_changed) return fail("The browser restarted. Reopen the page and retry.");
   if (result == PROBE_INVALID) return fail("Could not read the browser memory map. Retry or enter the final file link.");
@@ -161,7 +162,8 @@ int main(void) {
     ? "Browser memory reads failed. Check the jailbreak and retry."
     : "No eligible browser memory was available. Reopen the page and retry.");
   char reason[256];
-  snprintf(reason, sizeof reason, "No matching link found (read %llu KiB, attempted %llu KiB, failed reads %u). Reopen the page and retry.",
-    (unsigned long long)(reader.readable / 1024), (unsigned long long)(reader.attempted / 1024), reader.failures);
+  /* Near misses: Vikingfile links that began with the file's name and broke off from it. */
+  snprintf(reason, sizeof reason, "No matching link found (read %llu KiB, attempted %llu KiB, failed reads %u, near misses %u). Reopen the page and retry.",
+    (unsigned long long)(reader.readable / 1024), (unsigned long long)(reader.attempted / 1024), reader.failures, near_misses);
   return fail(reason);
 }

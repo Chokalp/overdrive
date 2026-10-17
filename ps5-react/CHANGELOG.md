@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Vikingfile names with spaces
+
+- Vikingfile mode reads a file name that keeps its spaces as they are in the page's JSON (or as
+  ` `): a space where the expected name has one continues the link, handed out as `%20`, where
+  before it ended the link and no name with a space could ever match. A literal `+` reads as a space
+  too, `%2B` stays a plus. A space anywhere else still ends a link. When nothing is found, the error
+  counts the "near misses", links that began with the name and broke off from it.
+
 ## Unreleased — PS5 packages by their header
 
 - `Archives.inspect` reports `pkg` for a PS5 package (`\x7F` `FIH`) as it does for a PS4 one

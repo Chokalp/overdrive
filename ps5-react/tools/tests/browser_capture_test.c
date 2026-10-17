@@ -31,6 +31,37 @@ int main(void) {
   assert(!browser_capture_url("", "https://vikingfile.com/d/Ab01234567/a%0Ab.rar"));
   assert(!browser_capture_url(match.filename, "https://vikingfile.com.evil.test/d/Ab01234567/Game%20DLC.pkg"));
   assert(!browser_capture_url(match.filename, "https://vikingfile.com/d/Ab01234567/Game%20DLC.pkg?x=1"));
+  // A form encoding's '+' reads as a space; an encoded plus does not, and a '+' never matches elsewhere.
+  assert(browser_capture_url("Game DLC.pkg", "https://vikingfile.com/d/Ab01234567/Game+DLC.pkg"));
+  assert(!browser_capture_url("Game DLC.pkg", "https://vikingfile.com/d/Ab01234567/Game%2BDLC.pkg"));
+  assert(browser_capture_url("Game+DLC.pkg", "https://vikingfile.com/d/Ab01234567/Game%2BDLC.pkg"));
+  assert(!browser_capture_url("GameXDLC.pkg", "https://vikingfile.com/d/Ab01234567/Game+DLC.pkg"));
+  {
+    // Vikingfile's JSON may carry the name with its spaces as they are, or as  : the scan follows
+    // a space only where the expected name has one, and hands out the link with %20 in its place.
+    BrowserMatch spaced = {.prefix = "https://vikingfile.com/d/", .filename = "[DLPSGAME.COM] - 01.002 PPSA17330.rar"};
+    const char *raw = "{\"link\":\"https:\\/\\/vikingfile.com\\/d\\/Ab01234567\\/[DLPSGAME.COM] - 01.002 PPSA17330.rar\"}";
+    assert(browser_match(&spaced, (const unsigned char *)raw, strlen(raw)));
+    assert(!strcmp(spaced.url, "https://vikingfile.com/d/Ab01234567/[DLPSGAME.COM]%20-%2001.002%20PPSA17330.rar"));
+    assert(browser_capture_url(spaced.filename, spaced.url));
+    const char *escaped = "{\"link\":\"https:\\/\\/vikingfile.com\\/d\\/Ab01234567\\/[DLPSGAME.COM]\\u0020-\\u002001.002\\u0020PPSA17330.rar\"}";
+    memset(spaced.url, 0, sizeof spaced.url);
+    assert(browser_match(&spaced, (const unsigned char *)escaped, strlen(escaped)));
+    assert(!strcmp(spaced.url, "https://vikingfile.com/d/Ab01234567/[DLPSGAME.COM]%20-%2001.002%20PPSA17330.rar"));
+    const char *plus = "\"https://vikingfile.com/d/Ab01234567/[DLPSGAME.COM]+-+01.002+PPSA17330.rar\"";
+    memset(spaced.url, 0, sizeof spaced.url);
+    assert(browser_match(&spaced, (const unsigned char *)plus, strlen(plus)));
+    // Another file whose name starts the same way stops at the first difference and is not taken; it
+    // counts as a near miss, which the capture reports when nothing is found.
+    const char *other = "{\"link\":\"https:\\/\\/vikingfile.com\\/d\\/Ab01234567\\/[DLPSGAME.COM] - 01.003 PPSA17330.rar\"}";
+    spaced.near_misses = 0;
+    assert(!browser_match(&spaced, (const unsigned char *)other, strlen(other)));
+    assert(spaced.near_misses >= 1);
+    // A space where the expected name has none still ends the link, as before.
+    BrowserMatch plain = {.prefix = "https://vikingfile.com/d/", .filename = "PPSA17330.rar"};
+    const char *cut = "\"https://vikingfile.com/d/Ab01234567/PPSA17330 .rar\"";
+    assert(!browser_match(&plain, (const unsigned char *)cut, strlen(cut)));
+  }
   Memory memory = {.length = 3 * PROBE_CHUNK};
   memory.bytes = calloc(1, memory.length); assert(memory.bytes);
   for (size_t step = 1; step <= 2; step++) {

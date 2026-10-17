@@ -209,13 +209,16 @@ bool browser_capture_url(const char *filename, const char *url) {
   if (any && !p[11]) return false;
   for (p += 11; *p; p++) {
     unsigned char c = *p;
+    /* A literal '+' is how a form encoding writes a space; an encoded one (%2B) stays a plus. */
+    const bool plus = c == '+';
     if (c == '%') {
       if (!p[1] || !p[2] || hex(p[1]) < 0 || hex(p[2]) < 0) return false;
       c = (unsigned char)(hex(p[1]) * 16 + hex(p[2])); p += 2;
     } else if (c <= 32 || c >= 127 || c == '?' || c == '#' || c == '/' || c == '\\') return false;
     if (any) {
       if (c < 32 || c == 127 || c == '/' || c == '\\') return false;
-    } else if (!*expected || c != *expected++) return false;
+    } else if (!*expected || (c != *expected && !(plus && *expected == ' '))) return false;
+    else expected++;
   }
   return !*expected;
 }
