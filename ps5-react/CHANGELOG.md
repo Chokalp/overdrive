@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — far focus scrolls skip ahead
+
+- A focus reveal more than two viewports away (Circle back to the top of a long page) jumps to one
+  viewport short of its target, then eases the rest. Easing the whole way ran at a catch-up speed
+  that rasterized screens of rows per frame and stuttered.
+
 ## Unreleased — Buzzheavier's file server
 
 - Anchor mode accepts Buzzheavier's file server, `<server>.buzzheavier.com/d/<id>?v=<signed token>`,
