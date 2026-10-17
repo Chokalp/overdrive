@@ -1,6 +1,6 @@
 """Real local archive extraction with the same native worker used on PS5."""
 from pathlib import Path
-import binascii,hashlib,io,json,lzma,os,random,struct,subprocess,tarfile,tempfile,time,zipfile
+import binascii,hashlib,io,json,lzma,os,random,struct,subprocess,sys,tarfile,tempfile,time,zipfile
 from rar_worker import build_host
 ROOT=Path(__file__).resolve().parents[1]
 DATA=bytes(range(256))*1024
@@ -116,9 +116,12 @@ def uudecode(source,destination):
 def main():
  with tempfile.TemporaryDirectory(prefix="ps5-react-archives-") as tmp:
   root=Path(tmp);binary=root/"archive-client"
-  prefix=subprocess.check_output(["brew","--prefix","libarchive"],text=True).strip()
-  xz=subprocess.check_output(["brew","--prefix","xz"],text=True).strip()
-  crypto=subprocess.check_output(["brew","--prefix","openssl@3"],text=True).strip()
+  # Homebrew keeps these keg-only on macOS; Linux distributions install them under /usr.
+  if sys.platform=="darwin":
+   prefix=subprocess.check_output(["brew","--prefix","libarchive"],text=True).strip()
+   xz=subprocess.check_output(["brew","--prefix","xz"],text=True).strip()
+   crypto=subprocess.check_output(["brew","--prefix","openssl@3"],text=True).strip()
+  else: prefix=xz=crypto="/usr"
   sources=[ROOT/"tools/tests/archive_client.cpp",ROOT/"native/shared/archives.cpp",ROOT/"native/shared/archive_preflight.cpp",ROOT/"native/shared/rar5_password.cpp",ROOT/"native/shared/archive_writer.cpp",ROOT/"native/desktop/rar_worker_process.cpp"]
   # RAR volumes go to rar-extract, as in the app; the other formats stay with libarchive.
   os.environ["PS5_REACT_RAR_WORKER"]=str(build_host(root/"rar-extract"))
