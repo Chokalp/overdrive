@@ -41,7 +41,11 @@ import { sourceKind, webURL } from './download-sources.js';
     try {
       webURL(url);
       const path = vikingPath(url);
-      return /^[a-z0-9]{10}\/[^/?#]+$/i.test(path) && decodeURIComponent(path.slice(11)) === filename;
+      if (!/^[a-z0-9]{10}\/[^/?#]+$/i.test(path)) return false;
+      const name = path.slice(11);
+      // A form encoding writes a space as a literal "+" (the capture accepts it the same way); an
+      // encoded plus, %2B, stays a plus either way.
+      return decodeURIComponent(name) === filename || decodeURIComponent(name.replace(/\+/g, "%20")) === filename;
     } catch {
       return false;
     }
