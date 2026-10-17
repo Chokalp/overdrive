@@ -55,6 +55,9 @@ import { useQueryActive, useStoreActions, useStoreState } from '../state/store.j
     const section = top.name === "search" ? "search" : top.name === "game" ? null : underneath;
     const topName = (0, useRef)(top.name);
     topName.current = top.name;
+    // L1/R1 stopped on Browse: the pill and the item show it as the current section, like any other
+    // tab, while the page stays where it was until ✕ opens the menu and a choice there shows the library.
+    const [stopped, setStopped] = (0, useState)(false);
     const [on] = (0, useState)(() => ({
       show,
       search: () => topName.current !== "search" && nav.push({ name: "search" }, "nav:search"),
@@ -70,9 +73,11 @@ import { useQueryActive, useStoreActions, useStoreState } from '../state/store.j
       const next = TABS[TABS.indexOf(current) + (forward ? 1 : -1)];
       if (!next) return;
       if (next === "catalog") {
+        setStopped(true);
         nav.focusLater(next === section ? "nav:current" : KEYS2.catalog);
         return;
       }
+      setStopped(false);
       if (next === "downloads" || next === "files") {
         store.setQuery("");
         nav.home();
@@ -87,7 +92,10 @@ import { useQueryActive, useStoreActions, useStoreState } from '../state/store.j
       // The page's top elements go up to `nav:current`, the current section's item, like a PS5 tab
       // row; the scope's own memory would be stale after L1/R1 or a closed menu.
       keyOf: (name) => name === section ? "nav:current" : KEYS2[name],
-      browseFocus: { onFocus: () => onBrowse = true, onBlur: () => onBrowse = false }
+      shown: stopped ? "catalog" : section,
+      browseFocus: { onFocus: () => onBrowse = true, onBlur: () => onBrowse = false },
+      // The stop ends once focus is off Browse and its menu is closed.
+      leaveBrowse: () => onBrowse || setStopped(false)
     };
   }
 
