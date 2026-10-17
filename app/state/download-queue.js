@@ -414,8 +414,10 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       // downloaded ".binary" (issue #8) told the user nothing. Only a small file reads as one, though:
       // gigabytes the headers don't name are still the game, in a format not checked (issue #24).
       if (!kind && job2.release.format === "binary" && (fs.stat(job2.downloadDestination)?.size || 0) < WEB_PAGE_BYTES) throw new Error("Not a game file: the host sent something else.");
-      if (!kind) return;
-      const artifact2 = formats.detected(job2.release, job2.root, kind);
+      const named = kind ? null : namedKind(job2);
+      if (!kind && !named) return;
+      if (named) console.log(`[download-queue] headers name no format; the file's name says ${named}`);
+      const artifact2 = formats.detected(job2.release, job2.root, kind || named);
       if (artifact2.nextAction === "extraction-required") {
         job2.artifact = { ...job2.artifact, format: kind, nextAction: artifact2.nextAction };
         return;
@@ -425,6 +427,38 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       job2.routing = artifact2;
       change();
       finishRouting(job2);
+    }
+    // A game image or package whose first bytes the header check does not know (a .ffpfsc that does
+    // not open on "PFSC", a PS5 package) would stay a ".binary" ShadowMount+ never sees (issues #24,
+    // #42). Its name still tells: the one the host gave it, the link's own path, else the format the
+    // same link has in another listing of this game. Archives are left to their headers, which name
+    // every kind Overdrive extracts.
+    function namedKind(job2) {
+      const kinds = [...formats.images, "pkg", "fpkg"];
+      const kindOf = (name) => {
+        const lower = String(name || "").toLowerCase().replace(/[?#].*$/, "");
+        const found = kinds.find((kind) => lower.endsWith(`.${kind}`));
+        return found === "fpkg" ? "pkg" : found;
+      };
+      const segments = (url) => {
+        try {
+          return webURL(url).path.replace(/[?#].*$/, "").split("/").map((part) => {
+            try {
+              return decodeURIComponent(part);
+            } catch {
+              return part;
+            }
+          });
+        } catch {
+          return [];
+        }
+      };
+      const fromName = kindOf(job2.fileName) || [job2.options?.url, job2.release.url].flatMap(segments).map(kindOf).find(Boolean);
+      if (fromName) return fromName;
+      if (!releasesOf) return null;
+      const urls = new Set([job2.release.url, job2.release.browserUrl].filter(Boolean));
+      const listed = releasesOf(job2.gameId).flatMap((release) => release.parts ? release.parts.flatMap((part) => part.sources) : [release]);
+      return listed.filter((item) => urls.has(item.url) || urls.has(item.browserUrl)).map((item) => kindOf(`.${item.format}`) || kindOf(item.filename)).find(Boolean) || null;
     }
     function finishRouting(job2) {
       const from = job2.downloadDestination, to = job2.routing.destination;
@@ -1211,6 +1245,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         console.log("[browser-capture] link captured:", linkForLog(result.url), "- validating one-byte range");
         const validated = await validateVikingCapture(http, result.url, metadata, session.cancel.signal);
         if (!current()) return;
+        if (metadata.filename) job2.fileName = metadata.filename;
         source2.sizeBytes = validated.expectedBytes;
         if (!job2.parts) job2.total = validated.expectedBytes;
         notifications.show(t("downloads.notice.captured"), job2.title);
@@ -1322,6 +1357,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           validated = found;
         }
         if (!current()) return;
+        if (validated.filename) job2.fileName = validated.filename;
         // The file's real length replaces the one the catalog could not know, as for Vikingfile.
         source2.sizeBytes = validated.expectedBytes;
         if (!job2.parts) job2.total = validated.expectedBytes;
