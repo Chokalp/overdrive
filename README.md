@@ -230,21 +230,21 @@ What a bundler throws away could not come back: most comments, the JSX syntax (i
 <summary><b>Developing</b></summary>
 <br>
 
-Everything runs from the repository root through npm. Once after cloning, `npm install` installs
-every dependency through its `postinstall` (`packaging/setup.sh`): on Linux the apt packages for the
-desktop preview, the PS5 build and the tests (it asks for `sudo` once), on macOS the Homebrew
-formulae; then Pillow and the framework's npm packages.
+Everything runs from the repository root through npm. Once after cloning, `npm run setup`
+(`packaging/setup.sh`) installs every dependency: on Linux the apt packages for the desktop preview,
+the PS5 build and the tests (it asks for `sudo` once), on macOS the Homebrew formulae; then Pillow
+and the framework's npm packages. Read the script first if you'd rather install them yourself.
 
 ```sh
-git clone git@github.com:inglbiwalid/overdrive.git
+git clone https://github.com/MyLuxy/overdrive.git
 cd overdrive
-npm install          # once; asks for sudo on Linux
+npm run setup        # once; asks for sudo on Linux
 npm run dev          # the app in a window on your PC, rebuilt on every save under app/
 ```
 
 | Command | What it does |
 | --- | --- |
-| `npm install` | Installs every dependency, once after cloning |
+| `npm run setup` | Installs every dependency, once after cloning |
 | `npm run dev` | Opens the app in the desktop preview and rebuilds it on every save (state resets on restart) |
 | `npm run preview` | Opens the desktop preview once, without watching |
 | `npm test` | The framework's checks; needed after changes under `ps5-react/`, not for `app/` only |
@@ -280,7 +280,7 @@ Builds run on `ubuntu-24.04` with clang 18, only from **Run workflow**: a push b
 Each run puts `Overdrive.exfat` and `update.zip` in a draft release named after
 `app/version.js`, which only maintainers can see.
 
-The same build locally, from the repository root, after `npm install` (see Developing):
+The same build locally, from the repository root, after `npm run setup` (see Developing):
 
 ```sh
 npm run build        # the app, then Overdrive.exfat and update.zip here

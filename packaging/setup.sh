@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Installs everything a fresh clone needs to preview, test and build Overdrive.
-# npm install runs it as postinstall, once, from the repository root:
+# Run it once, from the repository root (never on its own through npm install):
 #
-#   npm install
+#   npm run setup
 #
 # Linux (apt): asks for sudo once to install the packages for the desktop
 # preview (SDL2, OpenGL, curl, libarchive, OpenSSL, clang), the PS5 build

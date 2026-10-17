@@ -5,9 +5,9 @@
   "//": [
     "JSON has no comments; npm ignores this key.",
     "",
-    "npm install   Run once after cloning. Through postinstall it installs every dependency: the",
-    "              apt or Homebrew packages for the preview, the PS5 build and the tests (asks for",
-    "              sudo on Linux), Pillow, and the framework's npm packages. See packaging/setup.sh.",
+    "setup      Run once after cloning. Installs every dependency: the apt or Homebrew packages",
+    "           for the preview, the PS5 build and the tests (asks for sudo on Linux), Pillow, and",
+    "           the framework's npm packages. See packaging/setup.sh.",
     "build      Builds the PS5 app, then packages Overdrive.exfat and update.zip here, like the",
     "           GitHub workflow. Needs LLVM 18, cmake, ninja, nasm, exfatprogs; asks for sudo",
     "           to mount the image while filling it. See packaging/build.sh.",
@@ -20,7 +20,7 @@
     "stops on a bounds warning in archive_preflight.cpp."
   ],
   "scripts": {
-    "postinstall": "bash packaging/setup.sh",
+    "setup": "bash packaging/setup.sh",
     "build": "bash packaging/build.sh",
     "build:app": "bash packaging/build.sh --no-package",
     "preview": "cd ps5-react && CC=clang CXX=clang++ python3 tools/cli.py preview --app-dir ../app",
