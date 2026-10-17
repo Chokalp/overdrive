@@ -88,7 +88,7 @@ import { FocusScope, ScrollView, Text, View, useIsFocused } from '@ps5-react/cor
           {
             label: genreLabel(genre),
             icon: "chevronRight",
-            onPress: () => showLibrary({ ...NO_FILTERS, genre: [genre] }, "relevance")
+            onPress: () => showLibrary({ ...NO_FILTERS, genre: [genre] }, "newest")
           },
           genre
         )

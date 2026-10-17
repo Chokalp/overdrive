@@ -7,6 +7,7 @@
   "browse.footer": "مكتبة Spectrum",
   "browse.popularGenres": "الفئات المشهورة",
   "browse.popularNow": "الشهير الآن",
+  "browse.forYou": "قد يعجبك",
   "browse.recentlyViewed": "شُوهد مؤخراً",
   "browse.reviews": "{count, plural, zero {لا تقييمات} one {# تقييم} two {# تقييمان} few {# تقييمات} many {# تقييم} other {# تقييم}}",
   "browse.viewGame": "عرض اللعبة",

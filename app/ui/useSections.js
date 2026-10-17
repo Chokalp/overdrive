@@ -48,10 +48,10 @@ import { useQueryActive, useStoreActions, useStoreState } from '../state/store.j
     const [on] = (0, useState)(() => ({
       show,
       search: () => topName.current !== "search" && nav.push({ name: "search" }, "nav:search"),
-      discover: () => show(NO_FILTERS, "relevance", "spotlight:cta"),
+      discover: () => show(NO_FILTERS, "newest", "spotlight:cta"),
       top: () => show(NO_FILTERS, "rating"),
       new: () => show(NO_FILTERS, "newest"),
-      favorites: () => show({ ...NO_FILTERS, wishlist: true }, "relevance"),
+      favorites: () => show({ ...NO_FILTERS, wishlist: true }, "newest"),
       downloads: () => topName.current !== "downloads" && nav.push({ name: "downloads" }, "nav:downloads"),
       files: () => topName.current !== "files" && nav.push({ name: "files" }, "nav:files")
     }));

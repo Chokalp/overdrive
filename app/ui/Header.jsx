@@ -108,7 +108,7 @@ import { FocusScope, Text, View } from '@ps5-react/core';
                     label: t2("nav.allGames"),
                     checked: section === "catalog" && !filters.genre.length,
                     autoFocus: !onlyGenre,
-                    onSelect: () => on.show(NO_FILTERS, "relevance")
+                    onSelect: () => on.show(NO_FILTERS, "newest")
                   }
                 ),
                 /* @__PURE__ */ (0, jsx)(MenuDivider, {}),
@@ -118,7 +118,7 @@ import { FocusScope, Text, View } from '@ps5-react/core';
                     {
                       label: genreLabel(genre),
                       checked: onlyGenre === genre,
-                      onSelect: () => on.show({ ...NO_FILTERS, genre: [genre] }, "relevance")
+                      onSelect: () => on.show({ ...NO_FILTERS, genre: [genre] }, "newest")
                     },
                     genre
                   )
