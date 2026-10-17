@@ -10,7 +10,6 @@ import { t } from '../i18n/core.js';
 import { archivePassword } from './archive-password.js';
 import { BrowserRequired, archiveRefusal, cancellation, createSourceResolver, sourceKind, webURL } from './download-sources.js';
 import { LINK_PREFIX, captureAnchor, linkForLog, otherSourceLink, validateCapturedLink } from './browser-links.js';
-import { PKG_FIRMWARE_ERROR, fakePackagesInstall, isPs5Title } from './firmware.js';
 import { readJSON } from './read-json.js';
 import { mountedImages, shadowRequest, within2 } from './shadowmount.js';
 import { MARGIN2, spaceShortfall, stillNeeded } from './space.js';
@@ -247,10 +246,11 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         notifications.show(t("downloads.notice.installed"), job2.title);
       } catch (error2) {
         job2.state = "installer-required";
-        // The install is always tried: the firmware the title is told can be raised by the jailbreak.
-        // Refused where it reads above 11.60 (an archive can turn out to hold a PKG, issue #6), the
-        // likely reason is said instead of the service's code; a full drive still reads as one.
-        job2.error = isPs5Title(job2.gameId) && !fakePackagesInstall() && !/space/i.test(error2.message) ? PKG_FIRMWARE_ERROR : error2.message;
+        // The install's own reason is shown as it is (issue #44): putting the 11.60 limit in its place
+        // blamed the firmware on an 11.60 console, whose jailbreak reports a higher one to the title,
+        // and hid the usual cause, no payload loader on port 9021, which errors.js turns into "install
+        // it by hand". The 11.60 limit is told before the download, in its tips.
+        job2.error = error2.message;
         job2.message = t("downloads.installFailed");
       }
       job2.bytesPerSecond = 0;
