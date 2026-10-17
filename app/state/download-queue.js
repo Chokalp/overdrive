@@ -351,7 +351,12 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         // restricted or removed item, so it reads as a dead link.
         const refused = archiveRefusal(job2.parts ? job2.currentSource : job2.release, cause(error2.message));
         if (refused) error2 = new Error(`Source unavailable: HTTP ${refused}. Choose another source.`);
-        const browser = !refused && (error2 instanceof BrowserRequired || /browser verification required/i.test(cause(error2.message)));
+        // A link captured from the browser may wait in the queue past its life: refused before a byte
+        // was written, it asks for the page's check again instead of reading as a dead source.
+        const unwritten = !(job2.parts ? job2.parts[job2.partIndex]?.written : job2.written);
+        const expired = !refused && job2.capturedLink && unwritten && /HTTP (?:401|403|404|410)/.test(cause(error2.message));
+        if (expired) console.log("[download-queue] the captured link expired while queued; asking for the check again");
+        const browser = !refused && (expired || error2 instanceof BrowserRequired || /browser verification required/i.test(cause(error2.message)));
         const retried = job2.state !== "pausing" && !job2.cancelling && browser && active2.transferring && reresolve(job2);
         // A source that fails stays failed: the player picks another (the automatic switch to an
         // "equivalent" source was removed on 2026-10-16 at the user's request).
@@ -359,7 +364,9 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           job2.state = browser ? "awaiting-browser" : "failed";
           job2.error || (job2.error = job2.adopted && STALE_PARTIAL.test(cause(error2.message)) ? ADOPTED : error2.message);
           if (browser) {
-            job2.browserUrl = error2.url || job2.currentSource?.browserUrl || job2.currentSource?.url || job2.release.browserUrl || job2.release.url;
+            delete job2.capturedLink;
+            if (expired) job2.error = "The captured link expired while it waited in the queue. Open the source and pass its check again.";
+            job2.browserUrl = (expired ? null : error2.url) || job2.currentSource?.browserUrl || job2.currentSource?.url || job2.release.browserUrl || job2.release.url;
             delete job2.options;
             if (job2.parts) delete job2.parts[job2.partIndex].options;
           } else if (!job2.cancelling) notifications.show(t("downloads.notice.failed"), job2.title);
@@ -834,7 +841,8 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       return jobs.filter((job2) => job2.root === root2 && (BUSY.includes(job2.state) || job2.state === "paused") && !lost.includes(job2));
     }
     function pump(first) {
-      if (active2 || captures.size) return;
+      // An open verification no longer holds the queue: what is queued downloads meanwhile.
+      if (active2) return;
       const job2 = first?.state === "queued" ? first : jobs.find((item) => item.state === "queued");
       if (!job2) return;
       active2 = { job: job2, task: null };
@@ -1150,6 +1158,8 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
       if (job2.parts) job2.parts[job2.partIndex].options = verifiedOptions;
       job2.options = job2.parts ? void 0 : verifiedOptions;
       job2.directURL = verifiedOptions ? void 0 : url;
+      // Captured from the browser: if it waits in the queue too long, its refusal means expired.
+      job2.capturedLink = Boolean(verifiedOptions);
       stopCapture(job2);
       delete job2.reresolved;
       job2.message = "";
@@ -1384,7 +1394,7 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
           jobs.pop();
           throw error2;
         }
-        if (active2 || captures.size) console.log(`[download-queue] ${id} queued behind ${active2 ? `${active2.job.id} (${active2.job.state})` : "an open browser capture"}`);
+        if (active2) console.log(`[download-queue] ${id} queued behind ${active2.job.id} (${active2.job.state})`);
         pump();
         return id;
       },
@@ -1482,7 +1492,10 @@ import { VIKING_PAGE_PREFIX, VIKING_PREFIX, describeVikingCapture, linkPageMetad
         const anchor = viking ? "" : captureAnchor(job2.titleId);
         if (browserCapture && (viking || anchor)) {
           if (captures.has(id)) return;
-          if (captures.size || active2) throw new Error("Wait for the current queue task before opening the download page, so its captured link can start immediately.");
+          // A verification may be done while another download runs: the captured link waits in the
+          // queue for its turn, and if it expired by then the download asks for the check again. The
+          // console's browser is read for one capture at a time.
+          if (captures.size) throw new Error("Another download's verification is open. Finish or cancel it first.");
           const session = { cancel: cancellation(), task: null };
           captures.set(id, session);
           job2.captureState = "preparing";
