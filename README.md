@@ -59,9 +59,10 @@
 
 ### Before you start
 
-You need a **jailbroken PS5** running **[ShadowMount+](https://github.com/drakmor/ShadowMountPlus)**,
-the payload that installs `.exfat` images by itself. If ShadowMount+ shows its notification
-when the console starts, you are ready. You also need a **USB drive** and a **PC**.
+You need a **jailbroken PS5** running two payloads: **[ShadowMount+](https://github.com/drakmor/ShadowMountPlus)**,
+which installs `.exfat` images by itself, and **[kstuff](https://github.com/EchoStretch/kstuff-lite/releases)**.
+If ShadowMount+ shows its notification when the console starts, you are ready. You also need a
+**USB drive** and a **PC**.
 
 <p align="center">
   <a href="https://github.com/MyLuxy/overdrive/releases/latest/download/Overdrive.exfat"><img src="https://img.shields.io/badge/Download-Overdrive.exfat-f2f2f3?style=for-the-badge&labelColor=0b0b0d" alt="Download Overdrive.exfat" width="347"></a>
