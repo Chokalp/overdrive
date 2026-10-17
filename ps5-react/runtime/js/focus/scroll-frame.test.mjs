@@ -99,3 +99,19 @@ test('a jump far up a long page skips to a viewport short of the target, then ea
   settle();
   assert.equal(engine.y, 712, 'a reveal within two viewports eases all the way');
 });
+
+test('a shift moves only offsets at or below the moved content, so a jump above a list stays put', () => {
+  const {engine, frame} = setup(20000);
+  frame.reveal({x: 0, y: 12000, width: 100, height: 100}, null, {instant: true});
+  frame.reveal({x: 0, y: 0, width: 100, height: 100}, null);
+  assert.equal(engine.y, 720);
+  frame.shift(-6000, 3000);
+  assert.equal(engine.y, 720, 'the view above the list does not move');
+  assert.equal(frame.target[1], 0, 'nor does the target');
+  for (let i = 0; i < 400 && frame.timer !== null; i++) globalThis.__ps5ReactFrame(1000 / 60);
+  assert.equal(engine.y, 0, 'it reaches the top');
+  frame.reveal({x: 0, y: 5000, width: 100, height: 100}, null, {instant: true});
+  const before = engine.y;
+  frame.shift(-600, 3000);
+  assert.equal(engine.y, before + 600, 'a view inside the list moves with it');
+});

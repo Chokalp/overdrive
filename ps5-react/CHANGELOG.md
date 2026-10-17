@@ -5,6 +5,9 @@
 - A focus reveal more than two viewports away (Circle back to the top of a long page) jumps to one
   viewport short of its target, then eases the rest. Easing the whole way ran at a catch-up speed
   that rasterized screens of rows per frame and stuttered.
+- A VirtualList re-basing its rows shifts only offsets at or below its top: a view or a scroll target
+  on the content above the list (a jump back to a page's top) keeps its offset instead of being
+  carried back down into the list.
 
 ## Unreleased — Buzzheavier's file server
 
