@@ -50,11 +50,17 @@ import { FileSystem, Image } from '@ps5-react/core';
     }
   };
   // A game whose every host is paused (paused-hosts.js) leaves the shared lists in place, so no screen
-  // shows a game with nothing to download. The lists are the data module's own arrays, which every
-  // screen reads after this module has run.
+  // shows a game with nothing to download. So does one with no source at all (2026-10-17: 563 games,
+  // nearly all PS4, whose only links sit in Archive.org collections now restricted), unless another
+  // edition of it can be downloaded, which its Download button then offers; an edition with no source
+  // is never offered. The data stays: a game that gains a source shows again. The lists are the data
+  // module's own arrays, which every screen reads after this module has run.
+  var playable = (game) => game.providers?.length > 0 && !game.providers.every(pausedFilter);
+  var playableWorks = new Set([...games, ...twins].filter((game) => playable(game) && game.work != null).map((game) => game.work));
+  var hidden = (game, listed2) => game.providers?.length ? !playable(game) : !listed2 || !playableWorks.has(game.work);
   for (const list of [games, twins])
     for (let index = list.length - 1; index >= 0; index--)
-      if (list[index].providers?.length && list[index].providers.every(pausedFilter)) list.splice(index, 1);
+      if (hidden(list[index], list === games)) list.splice(index, 1);
   var entries = [...games, ...twins];
   var _a;
   for (const game of entries) {
