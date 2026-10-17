@@ -26,7 +26,7 @@ import { FocusScope, Text, View } from '@ps5-react/core';
   function Header({ children }) {
     const t2 = useT();
     const { rtl } = useLocale();
-    const { section, filters, on, step, keyOf } = useSections();
+    const { section, filters, on, step, keyOf, browseFocus } = useSections();
     const wishlist = useWishlist();
     const favorites = wishlist.filter((id) => getGame(id)).length;
     const nav = useNavActions();
@@ -98,7 +98,8 @@ import { FocusScope, Text, View } from '@ps5-react/core';
                   current: section === "catalog",
                   onPress: () => setBrowsing((open) => !open),
                   onLayout: track("catalog"),
-                  nextFocusDown: down
+                  nextFocusDown: down,
+                  ...browseFocus
                 }
               ),
               /* @__PURE__ */ (0, jsxs)(Menu, { open: browsing, onClose: () => setBrowsing(false), rows: genres.length + 2, children: [
@@ -108,7 +109,7 @@ import { FocusScope, Text, View } from '@ps5-react/core';
                     label: t2("nav.allGames"),
                     checked: section === "catalog" && !filters.genre.length,
                     autoFocus: !onlyGenre,
-                    onSelect: () => on.show(NO_FILTERS, "newest")
+                    onSelect: () => on.show(NO_FILTERS, "newest", void 0, "catalog")
                   }
                 ),
                 /* @__PURE__ */ (0, jsx)(MenuDivider, {}),

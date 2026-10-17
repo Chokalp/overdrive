@@ -9,7 +9,7 @@ import { latin, useLocale, useT } from '../i18n/index.js';
 import { NO_FILTERS, formatCount, formatDate3, sortGames, sortLabel } from '../state/catalog.js';
 import { shuffle } from './picks.js';
 import { useNavActions } from '../state/nav.jsx';
-import { useStoreActions } from '../state/store.jsx';
+import { useShowLibrary } from '../ui/useSections.js';
 import { Cover } from '../ui/Cover.jsx';
 import { FocusFrame } from '../ui/FocusRing.jsx';
 import { SectionHeader } from '../ui/SectionHeader.jsx';
@@ -59,14 +59,10 @@ import { Text, View } from '@ps5-react/core';
   }
   function TopCharts() {
     useT();
-    const { openGame, focusLater } = useNavActions();
-    const { setFilters, setQuery, setSort } = useStoreActions();
-    const seeAll = (id) => {
-      setFilters(NO_FILTERS);
-      setQuery("");
-      setSort(id);
-      focusLater("catalog:sort");
-    };
+    const { openGame } = useNavActions();
+    const show = useShowLibrary();
+    // "See all" opens the library on that sort, as the header's section of the same name does.
+    const seeAll = (id) => show(NO_FILTERS, id, "catalog:sort", { rating: "top", newest: "new" }[id] ?? "catalog");
     return /* @__PURE__ */ (0, jsx)(View, { scrollAnchor: true, style: { marginBottom: -18, marginTop: -12, flexDirection: "row", gap: 48 }, children: CHARTS.map(
       (chart) => /* @__PURE__ */ (0, jsxs)(View, { style: { flex: 1 }, children: [
         /* @__PURE__ */ (0, jsx)(SectionHeader, { title: sortLabel(chart.id), onSeeAll: () => seeAll(chart.id) }),
