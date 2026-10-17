@@ -1,4 +1,10 @@
 # Changelog
+
+## Unreleased — PS5 packages by their header
+
+- `Archives.inspect` reports `pkg` for a PS5 package (`\x7F` `FIH`) as it does for a PS4 one
+  (`\x7F` `CNT`), so a download of unknown format is routed to the package installer.
+
 ## Unreleased — desktop preview on Linux, with a mouse
 
 - The desktop preview builds and runs on Linux: `sysinfo`, `/proc/self/mounts` and `xdg-open` stand
