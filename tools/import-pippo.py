@@ -194,6 +194,17 @@ LINKVAULT = "link-vault.org"
 # mirror the console's capture names exactly (2026-10-16, the user's call). The rest - AkiraBox,
 # DataNodes, FileKeeper, FileDitch, DataVaults - could not be told to work, so they are left out.
 KEPT_MIRRORS = ("VikingFile",)
+# Links Pippo still lists whose file the host has deleted, checked by hand and taken out of
+# the catalog (2026-10-17): an import must not bring them back.
+DEAD_LINKS = frozenset((
+    "https://vikingfile.com/f/HNrZCSKbfz",
+    "https://vikingfile.com/f/jSw8RclFYf",
+    "https://vikingfile.com/f/GsQZLkn32m",
+    "https://vik1ngfile.site/f/SDlchIQVC5",
+    "https://datanodes.to/rsz11moa0qci",
+    "https://datanodes.to/t0z00hv27z8j",
+    "https://filekeeper.net/xnni4n40qc2x",
+))
 INNER_MIRRORS = {
     "AkiraBox": "AkiraBox",
     "DataNodes": "DataNodes",
@@ -562,6 +573,9 @@ def build_plan(args):
             if spec is None:
                 info["unknown_hosts"][host] += 1
                 info["warnings"].append("unknown host %r in %s.%s" % (host, title_id, field))
+                continue
+            if url in DEAD_LINKS:
+                info["left_out"]["dead"] += 1
                 continue
             if url in known:
                 info["present"] += 1
